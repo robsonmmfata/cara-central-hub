@@ -1,6 +1,8 @@
 
 import { Layout } from "@/components/Layout";
 import { ClientCard } from "@/components/ClientCard";
+import { NewClientForm } from "@/components/NewClientForm";
+import { EditClientForm } from "@/components/EditClientForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -13,6 +15,7 @@ const mockClients = [
     id: '1',
     name: 'João Ribeiro',
     phone: '(11) 91234-5678',
+    email: 'joao@email.com',
     reservations: 5,
     totalSpent: 4500,
     status: 'VIP' as const,
@@ -21,6 +24,7 @@ const mockClients = [
     id: '2',
     name: 'Maria Souza',
     phone: '(11) 99888-7766',
+    email: 'maria@email.com',
     reservations: 3,
     totalSpent: 2700,
     status: 'Regular' as const,
@@ -29,6 +33,7 @@ const mockClients = [
     id: '3',
     name: 'Carlos Silva',
     phone: '(11) 95555-3322',
+    email: 'carlos@email.com',
     reservations: 2,
     totalSpent: 1800,
     status: 'Bloqueado' as const,
@@ -37,6 +42,7 @@ const mockClients = [
     id: '4',
     name: 'Ana Costa',
     phone: '(11) 97777-1234',
+    email: 'ana@email.com',
     reservations: 8,
     totalSpent: 6200,
     status: 'VIP' as const,
@@ -45,6 +51,7 @@ const mockClients = [
     id: '5',
     name: 'Pedro Santos',
     phone: '(11) 94444-5678',
+    email: 'pedro@email.com',
     reservations: 1,
     totalSpent: 800,
     status: 'Regular' as const,
@@ -54,6 +61,8 @@ const mockClients = [
 const Clientes = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<typeof mockClients[0] | null>(null);
 
   const filteredClients = mockClients.filter(client =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -63,6 +72,11 @@ const Clientes = () => {
   const totalClients = mockClients.length;
   const vipClients = mockClients.filter(c => c.status === 'VIP').length;
   const blockedClients = mockClients.filter(c => c.status === 'Bloqueado').length;
+
+  const handleEditClient = (client: typeof mockClients[0]) => {
+    setSelectedClient(client);
+    setShowEditForm(true);
+  };
 
   return (
     <Layout>
@@ -151,7 +165,18 @@ const Clientes = () => {
           {filteredClients.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredClients.map((client) => (
-                <ClientCard key={client.id} client={client} />
+                <div key={client.id} className="relative">
+                  <ClientCard client={client} />
+                  <div className="absolute top-4 right-4">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleEditClient(client)}
+                    >
+                      Editar
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
@@ -163,81 +188,17 @@ const Clientes = () => {
           )}
         </div>
 
-        {/* Add Client Form Modal */}
-        {showAddForm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Adicionar Novo Cliente</h2>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Nome completo</label>
-                      <Input placeholder="Nome completo" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Data de nascimento</label>
-                      <Input type="date" />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Gênero</label>
-                    <select className="w-full border border-gray-300 rounded-lg p-2">
-                      <option>Selecione o gênero</option>
-                      <option>Masculino</option>
-                      <option>Feminino</option>
-                      <option>Outro</option>
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp</label>
-                      <Input placeholder="(00) 00000-0000" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
-                      <Input placeholder="exemplo@email.com" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Cliente</label>
-                    <select className="w-full border border-gray-300 rounded-lg p-2">
-                      <option>Selecione o tipo de cliente</option>
-                      <option>Regular</option>
-                      <option>VIP</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Observações gerais</label>
-                    <textarea 
-                      placeholder="Histórico, detalhes importantes, etc."
-                      className="w-full border border-gray-300 rounded-lg p-3 h-24"
-                    />
-                  </div>
-
-                  <div className="flex gap-3 justify-end">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowAddForm(false)}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button 
-                      className="bg-farm-blue-500 hover:bg-farm-blue-600"
-                      onClick={() => setShowAddForm(false)}
-                    >
-                      Salvar Cliente
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-        )}
+        {/* Modals */}
+        <NewClientForm 
+          isOpen={showAddForm} 
+          onClose={() => setShowAddForm(false)} 
+        />
+        
+        <EditClientForm 
+          client={selectedClient} 
+          isOpen={showEditForm} 
+          onClose={() => setShowEditForm(false)} 
+        />
       </div>
     </Layout>
   );

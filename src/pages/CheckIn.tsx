@@ -11,10 +11,41 @@ import {
   HelpCircle,
   TreePine,
   Calendar,
-  Users
+  Users,
+  Phone,
+  MessageCircle,
+  Globe
 } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const CheckIn = () => {
+  const { toast } = useToast();
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+
+  const handleCheckIn = () => {
+    setIsCheckedIn(true);
+    toast({
+      title: "Check-in realizado!",
+      description: "Bem-vindo à Chácara do Zé! Tenha uma ótima estadia.",
+    });
+  };
+
+  const handleContactSupport = (method: string) => {
+    toast({
+      title: "Redirecionando...",
+      description: `Abrindo ${method} para contato com o suporte.`,
+    });
+    
+    if (method === 'WhatsApp') {
+      window.open('https://wa.me/5511999999999', '_blank');
+    } else if (method === 'Telefone') {
+      window.open('tel:+5511333333333', '_blank');
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">
@@ -25,11 +56,23 @@ const CheckIn = () => {
           </div>
           <p className="text-farm-blue-200 text-sm uppercase tracking-wide mb-2">CHECK-IN DIGITAL</p>
           <h1 className="text-4xl font-bold mb-4">Bem-vindo à Chácara do Zé!</h1>
-          <p className="text-farm-blue-100 text-lg">02 de abril de 2024 • Maria Oliveira</p>
+          <p className="text-farm-blue-100 text-lg mb-4">02 de abril de 2024 • Maria Oliveira</p>
           
-          <Button className="mt-6 bg-white text-farm-blue-600 hover:bg-gray-50 px-8 py-3 rounded-xl font-semibold text-lg shadow-lg">
-            Começar Check-in
-          </Button>
+          {!isCheckedIn ? (
+            <Button 
+              onClick={handleCheckIn}
+              className="mt-6 bg-white text-farm-blue-600 hover:bg-gray-50 px-8 py-3 rounded-xl font-semibold text-lg shadow-lg"
+            >
+              Começar Check-in
+            </Button>
+          ) : (
+            <div className="mt-6">
+              <Badge className="bg-green-500 text-white px-4 py-2 text-lg">
+                <CheckCircle className="h-5 w-5 mr-2" />
+                Check-in Realizado!
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Notice Board */}
@@ -46,7 +89,7 @@ const CheckIn = () => {
               <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold text-red-800">Geladeira com problema</h3>
-                <p className="text-red-700 text-sm">Aviso válido até 10/04</p>
+                <p className="text-red-700 text-sm">Aviso válido até 10/04 - Use a geladeira da área gourmet</p>
               </div>
             </div>
           </div>
@@ -55,7 +98,7 @@ const CheckIn = () => {
         {/* Menu Sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* House Rules */}
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowRules(true)}>
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 bg-farm-blue-100 rounded-xl">
                 <Home className="h-6 w-6 text-farm-blue-600" />
@@ -66,7 +109,7 @@ const CheckIn = () => {
           </Card>
 
           {/* House Guide */}
-          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowGuide(true)}>
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 bg-farm-green-100 rounded-xl">
                 <Wifi className="h-6 w-6 text-farm-green-600" />
@@ -87,8 +130,14 @@ const CheckIn = () => {
           </div>
           
           <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-            <input type="checkbox" className="w-5 h-5 text-farm-blue-600" />
+            <input 
+              type="checkbox" 
+              className="w-5 h-5 text-farm-blue-600" 
+              checked={isCheckedIn}
+              onChange={(e) => setIsCheckedIn(e.target.checked)}
+            />
             <span className="text-gray-700">Cheguei na chácara</span>
+            {isCheckedIn && <CheckCircle className="h-5 w-5 text-green-500 ml-auto" />}
           </div>
         </Card>
 
@@ -102,13 +151,28 @@ const CheckIn = () => {
           </div>
           <p className="text-farm-blue-700 mb-4">Está com alguma dúvida ou problema? Entre em contato conosco!</p>
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" className="border-farm-blue-300 text-farm-blue-700 hover:bg-farm-blue-200">
+            <Button 
+              variant="outline" 
+              className="border-farm-blue-300 text-farm-blue-700 hover:bg-farm-blue-200"
+              onClick={() => handleContactSupport('WhatsApp')}
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
               WhatsApp
             </Button>
-            <Button variant="outline" className="border-farm-blue-300 text-farm-blue-700 hover:bg-farm-blue-200">
+            <Button 
+              variant="outline" 
+              className="border-farm-blue-300 text-farm-blue-700 hover:bg-farm-blue-200"
+              onClick={() => handleContactSupport('Telefone')}
+            >
+              <Phone className="h-4 w-4 mr-2" />
               Telefone
             </Button>
-            <Button variant="outline" className="border-farm-blue-300 text-farm-blue-700 hover:bg-farm-blue-200">
+            <Button 
+              variant="outline" 
+              className="border-farm-blue-300 text-farm-blue-700 hover:bg-farm-blue-200"
+              onClick={() => handleContactSupport('Chat Online')}
+            >
+              <Globe className="h-4 w-4 mr-2" />
               Chat Online
             </Button>
           </div>
@@ -134,6 +198,82 @@ const CheckIn = () => {
             <p className="text-sm text-gray-600">Chalé</p>
           </Card>
         </div>
+
+        {/* Rules Modal */}
+        {showRules && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">Regras da Chácara</h2>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <h3 className="font-semibold mb-2">Horários</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-600">
+                      <li>Check-in: 14h00</li>
+                      <li>Check-out: 12h00</li>
+                      <li>Silêncio após 22h00</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2">Área da Piscina</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-600">
+                      <li>Uso sob própria responsabilidade</li>
+                      <li>Crianças devem estar acompanhadas</li>
+                      <li>Não é permitido vidro na área da piscina</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2">Limpeza</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-600">
+                      <li>Mantenha a propriedade limpa</li>
+                      <li>Descarte o lixo nos locais apropriados</li>
+                      <li>Deixe a louça lavada</li>
+                    </ul>
+                  </div>
+                </div>
+                <Button onClick={() => setShowRules(false)} className="mt-6 w-full">
+                  Entendi
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Guide Modal */}
+        {showGuide && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-4">Guia da Casa</h2>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <h3 className="font-semibold mb-2">WiFi</h3>
+                    <p className="text-gray-600 mb-1">Rede: <strong>Chacara_Wifi</strong></p>
+                    <p className="text-gray-600">Senha: <strong>chacara2024</strong></p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2">Equipamentos</h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-600">
+                      <li>TV com Netflix na sala</li>
+                      <li>Som bluetooth disponível</li>
+                      <li>Churrasqueira com utensílios</li>
+                      <li>Geladeira, fogão e micro-ondas</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2">Emergências</h3>
+                    <p className="text-gray-600 mb-1">Proprietário: <strong>(11) 99999-9999</strong></p>
+                    <p className="text-gray-600 mb-1">Bombeiros: <strong>193</strong></p>
+                    <p className="text-gray-600">Polícia: <strong>190</strong></p>
+                  </div>
+                </div>
+                <Button onClick={() => setShowGuide(false)} className="mt-6 w-full">
+                  Entendi
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
       </div>
     </Layout>
   );

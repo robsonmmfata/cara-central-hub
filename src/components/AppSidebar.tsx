@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Calendar, Home, Users, CreditCard, CheckSquare, BarChart3, MapPin, Settings, TreePine } from 'lucide-react';
+import { Calendar, Home, Users, CreditCard, CheckSquare, BarChart3, MapPin, Settings, TreePine, FileText, HelpCircle } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -50,6 +50,16 @@ const menuItems = [
     title: "Localização",
     url: "/localizacao",
     icon: MapPin,
+  },
+  {
+    title: "Relatórios",
+    url: "/relatorios",
+    icon: FileText,
+  },
+  {
+    title: "Ajuda",
+    url: "/ajuda",
+    icon: HelpCircle,
   },
   {
     title: "Configurações",

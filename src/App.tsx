@@ -10,6 +10,11 @@ import Cadastro from "./pages/Cadastro";
 import Index from "./pages/Index";
 import Clientes from "./pages/Clientes";
 import CheckIn from "./pages/CheckIn";
+import Localizacao from "./pages/Localizacao";
+import Tarefas from "./pages/Tarefas";
+import Pagamentos from "./pages/Pagamentos";
+import Ajuda from "./pages/Ajuda";
+import Relatorios from "./pages/Relatorios";
 import DashboardVisitante from "./pages/DashboardVisitante";
 import DashboardProprietario from "./pages/DashboardProprietario";
 import DashboardAdmin from "./pages/DashboardAdmin";
@@ -33,10 +38,12 @@ const App = () => (
           <Route path="/dashboard-admin" element={<DashboardAdmin />} />
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/checkin" element={<CheckIn />} />
+          <Route path="/localizacao" element={<Localizacao />} />
+          <Route path="/tarefas" element={<Tarefas />} />
+          <Route path="/pagamentos" element={<Pagamentos />} />
+          <Route path="/ajuda" element={<Ajuda />} />
+          <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/reservas" element={<Index />} />
-          <Route path="/pagamentos" element={<Index />} />
-          <Route path="/tarefas" element={<Index />} />
-          <Route path="/localizacao" element={<Index />} />
           <Route path="/configuracoes" element={<Index />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
