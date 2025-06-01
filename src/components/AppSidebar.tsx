@@ -18,7 +18,7 @@ import { useLocation, Link } from 'react-router-dom';
 const menuItems = [
   {
     title: "Dashboard",
-    url: "/",
+    url: "/dashboard",
     icon: Home,
   },
   {
