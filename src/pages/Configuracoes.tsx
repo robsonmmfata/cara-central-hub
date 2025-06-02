@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Camera, Save, User, Mail, Lock, MapPin, Phone, Shield, Bell, Upload } from "lucide-react";
+import { Camera, Save, User, Mail, Lock, MapPin, Phone, Shield, Bell } from "lucide-react";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,7 +20,7 @@ const Configuracoes = () => {
     endereco: 'Rua das Flores, 123',
     cidade: 'São Paulo, SP',
     cep: '01234-567',
-    senha: '',
+    senhaAtual: '',
     novaSenha: '',
     confirmarSenha: '',
     notificacoes: true,
@@ -29,18 +29,39 @@ const Configuracoes = () => {
   });
 
   const handleSave = () => {
-    if (userData.novaSenha && userData.novaSenha !== userData.confirmarSenha) {
-      toast({
-        title: "Erro",
-        description: "As senhas não coincidem.",
-        variant: "destructive"
-      });
-      return;
+    console.log('Salvando configurações:', userData);
+    
+    // Validar senhas se estiverem preenchidas
+    if (userData.novaSenha || userData.confirmarSenha || userData.senhaAtual) {
+      if (!userData.senhaAtual) {
+        toast({
+          title: "Erro",
+          description: "Digite sua senha atual para alterar a senha.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (userData.novaSenha !== userData.confirmarSenha) {
+        toast({
+          title: "Erro",
+          description: "As novas senhas não coincidem.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (userData.novaSenha.length < 6) {
+        toast({
+          title: "Erro",
+          description: "A nova senha deve ter pelo menos 6 caracteres.",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
-    // Simular salvamento dos dados
-    console.log('Dados salvos:', userData);
-    
+    // Simular salvamento
     toast({
       title: "Configurações salvas!",
       description: "Suas informações foram atualizadas com sucesso.",
@@ -49,7 +70,7 @@ const Configuracoes = () => {
     // Limpar campos de senha após salvar
     setUserData(prev => ({
       ...prev,
-      senha: '',
+      senhaAtual: '',
       novaSenha: '',
       confirmarSenha: ''
     }));
@@ -58,7 +79,7 @@ const Configuracoes = () => {
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Verificar se é uma imagem
+      // Validações
       if (!file.type.startsWith('image/')) {
         toast({
           title: "Erro",
@@ -68,7 +89,6 @@ const Configuracoes = () => {
         return;
       }
 
-      // Verificar tamanho (máximo 2MB)
       if (file.size > 2 * 1024 * 1024) {
         toast({
           title: "Erro",
@@ -78,10 +98,11 @@ const Configuracoes = () => {
         return;
       }
 
-      // Criar URL para preview da imagem
+      // Criar URL da imagem
       const imageUrl = URL.createObjectURL(file);
       setUserData(prev => ({ ...prev, foto: imageUrl }));
       
+      console.log('Foto atualizada:', file.name);
       toast({
         title: "Foto atualizada!",
         description: "Sua foto de perfil foi alterada com sucesso.",
@@ -91,6 +112,11 @@ const Configuracoes = () => {
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setUserData(prev => ({ ...prev, [field]: value }));
+    console.log(`Campo ${field} alterado para:`, value);
   };
 
   return (
@@ -110,7 +136,7 @@ const Configuracoes = () => {
             </h2>
             <div className="flex flex-col items-center space-y-4">
               <Avatar className="w-32 h-32">
-                <AvatarImage src={userData.foto} />
+                <AvatarImage src={userData.foto} alt="Foto de perfil" />
                 <AvatarFallback className="text-2xl">JS</AvatarFallback>
               </Avatar>
               
@@ -149,7 +175,7 @@ const Configuracoes = () => {
                   <Input
                     id="nome"
                     value={userData.nome}
-                    onChange={(e) => setUserData({...userData, nome: e.target.value})}
+                    onChange={(e) => handleInputChange('nome', e.target.value)}
                   />
                 </div>
                 
@@ -161,7 +187,7 @@ const Configuracoes = () => {
                       id="telefone"
                       className="pl-10"
                       value={userData.telefone}
-                      onChange={(e) => setUserData({...userData, telefone: e.target.value})}
+                      onChange={(e) => handleInputChange('telefone', e.target.value)}
                     />
                   </div>
                 </div>
@@ -180,7 +206,7 @@ const Configuracoes = () => {
                   <Input
                     id="endereco"
                     value={userData.endereco}
-                    onChange={(e) => setUserData({...userData, endereco: e.target.value})}
+                    onChange={(e) => handleInputChange('endereco', e.target.value)}
                   />
                 </div>
                 
@@ -189,7 +215,7 @@ const Configuracoes = () => {
                   <Input
                     id="cidade"
                     value={userData.cidade}
-                    onChange={(e) => setUserData({...userData, cidade: e.target.value})}
+                    onChange={(e) => handleInputChange('cidade', e.target.value)}
                   />
                 </div>
 
@@ -198,7 +224,7 @@ const Configuracoes = () => {
                   <Input
                     id="cep"
                     value={userData.cep}
-                    onChange={(e) => setUserData({...userData, cep: e.target.value})}
+                    onChange={(e) => handleInputChange('cep', e.target.value)}
                   />
                 </div>
               </div>
@@ -221,7 +247,7 @@ const Configuracoes = () => {
                       type="email"
                       className="pl-10"
                       value={userData.email}
-                      onChange={(e) => setUserData({...userData, email: e.target.value})}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
                     />
                   </div>
                 </div>
@@ -240,8 +266,9 @@ const Configuracoes = () => {
                   <Input
                     id="senha-atual"
                     type="password"
-                    value={userData.senha}
-                    onChange={(e) => setUserData({...userData, senha: e.target.value})}
+                    value={userData.senhaAtual}
+                    onChange={(e) => handleInputChange('senhaAtual', e.target.value)}
+                    placeholder="Digite sua senha atual"
                   />
                 </div>
                 
@@ -252,7 +279,8 @@ const Configuracoes = () => {
                       id="nova-senha"
                       type="password"
                       value={userData.novaSenha}
-                      onChange={(e) => setUserData({...userData, novaSenha: e.target.value})}
+                      onChange={(e) => handleInputChange('novaSenha', e.target.value)}
+                      placeholder="Digite a nova senha"
                     />
                   </div>
                   
@@ -262,7 +290,8 @@ const Configuracoes = () => {
                       id="confirmar-senha"
                       type="password"
                       value={userData.confirmarSenha}
-                      onChange={(e) => setUserData({...userData, confirmarSenha: e.target.value})}
+                      onChange={(e) => handleInputChange('confirmarSenha', e.target.value)}
+                      placeholder="Confirme a nova senha"
                     />
                   </div>
                 </div>
@@ -286,7 +315,7 @@ const Configuracoes = () => {
                     <input
                       type="checkbox"
                       checked={userData.notificacoes}
-                      onChange={(e) => setUserData({...userData, notificacoes: e.target.checked})}
+                      onChange={(e) => handleInputChange('notificacoes', e.target.checked)}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -302,7 +331,7 @@ const Configuracoes = () => {
                     <input
                       type="checkbox"
                       checked={userData.emailMarketing}
-                      onChange={(e) => setUserData({...userData, emailMarketing: e.target.checked})}
+                      onChange={(e) => handleInputChange('emailMarketing', e.target.checked)}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -313,8 +342,8 @@ const Configuracoes = () => {
 
             {/* Save Button */}
             <div className="flex justify-end">
-              <Button onClick={handleSave} className="bg-farm-blue-500 hover:bg-farm-blue-600 px-8">
-                <Save className="w-4 w-4 mr-2" />
+              <Button onClick={handleSave} className="bg-teal-600 hover:bg-teal-700 px-8">
+                <Save className="w-4 h-4 mr-2" />
                 Salvar Alterações
               </Button>
             </div>

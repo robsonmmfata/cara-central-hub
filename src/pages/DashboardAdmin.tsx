@@ -14,8 +14,14 @@ import {
   CheckCircle,
   Clock,
   BarChart3,
-  Settings
+  Settings,
+  Eye,
+  Edit,
+  Check,
+  X
 } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const mockUsuarios = [
   {
@@ -72,6 +78,10 @@ const mockChacaras = [
 ];
 
 const DashboardAdmin = () => {
+  const { toast } = useToast();
+  const [usuarios, setUsuarios] = useState(mockUsuarios);
+  const [chacaras, setChacaras] = useState(mockChacaras);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "ativo":
@@ -84,6 +94,67 @@ const DashboardAdmin = () => {
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const handleUserAction = (userId: number, action: string) => {
+    const usuario = usuarios.find(u => u.id === userId);
+    console.log(`Ação "${action}" executada para usuário:`, usuario);
+    
+    toast({
+      title: `${action} executado`,
+      description: `Ação realizada para ${usuario?.nome}`,
+    });
+  };
+
+  const handlePropertyAction = (propertyId: number, action: string) => {
+    const chacara = chacaras.find(c => c.id === propertyId);
+    
+    if (action === 'aprovar') {
+      setChacaras(prev => prev.map(c => 
+        c.id === propertyId ? { ...c, status: 'aprovada' } : c
+      ));
+      toast({
+        title: "Propriedade aprovada!",
+        description: `${chacara?.nome} foi aprovada com sucesso.`,
+      });
+    } else {
+      console.log(`Ação "${action}" executada para propriedade:`, chacara);
+      toast({
+        title: `${action} executado`,
+        description: `Ação realizada para ${chacara?.nome}`,
+      });
+    }
+  };
+
+  const handleAdminAction = (action: string) => {
+    console.log(`Ação administrativa: ${action}`);
+    
+    switch (action) {
+      case 'moderacao':
+        toast({
+          title: "Moderação",
+          description: "Abrindo painel de moderação...",
+        });
+        break;
+      case 'relatorios':
+        toast({
+          title: "Relatórios",
+          description: "Abrindo relatórios administrativos...",
+        });
+        break;
+      case 'analytics':
+        toast({
+          title: "Analytics",
+          description: "Abrindo painel de métricas...",
+        });
+        break;
+      case 'configuracoes':
+        toast({
+          title: "Configurações",
+          description: "Abrindo configurações do sistema...",
+        });
+        break;
     }
   };
 
@@ -145,7 +216,10 @@ const DashboardAdmin = () => {
 
         {/* Admin Actions */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <Card 
+            className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => handleAdminAction('moderacao')}
+          >
             <div className="flex items-center gap-4">
               <div className="p-3 bg-purple-500 rounded-xl">
                 <Shield className="h-6 w-6 text-white" />
@@ -157,7 +231,10 @@ const DashboardAdmin = () => {
             </div>
           </Card>
 
-          <Card className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <Card 
+            className="p-6 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => handleAdminAction('relatorios')}
+          >
             <div className="flex items-center gap-4">
               <div className="p-3 bg-orange-500 rounded-xl">
                 <AlertTriangle className="h-6 w-6 text-white" />
@@ -169,7 +246,10 @@ const DashboardAdmin = () => {
             </div>
           </Card>
 
-          <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card 
+            className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => handleAdminAction('analytics')}
+          >
             <div className="flex items-center gap-4">
               <div className="p-3 bg-blue-500 rounded-xl">
                 <BarChart3 className="h-6 w-6 text-white" />
@@ -181,7 +261,10 @@ const DashboardAdmin = () => {
             </div>
           </Card>
 
-          <Card className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200">
+          <Card 
+            className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => handleAdminAction('configuracoes')}
+          >
             <div className="flex items-center gap-4">
               <div className="p-3 bg-gray-500 rounded-xl">
                 <Settings className="h-6 w-6 text-white" />
@@ -198,7 +281,9 @@ const DashboardAdmin = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-800">Usuários Recentes</h2>
-            <Button variant="outline">Ver todos</Button>
+            <Button variant="outline" onClick={() => toast({ title: "Ver todos", description: "Abrindo lista completa de usuários..." })}>
+              Ver todos
+            </Button>
           </div>
 
           <Card className="overflow-hidden">
@@ -215,7 +300,7 @@ const DashboardAdmin = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {mockUsuarios.map((usuario) => (
+                  {usuarios.map((usuario) => (
                     <tr key={usuario.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {usuario.nome}
@@ -235,8 +320,22 @@ const DashboardAdmin = () => {
                         {usuario.ultimoLogin}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                        <Button size="sm" variant="outline">Ver</Button>
-                        <Button size="sm" variant="outline">Editar</Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleUserAction(usuario.id, 'Ver')}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Ver
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleUserAction(usuario.id, 'Editar')}
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Editar
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -250,7 +349,9 @@ const DashboardAdmin = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-800">Gestão de Propriedades</h2>
-            <Button variant="outline">Ver todas</Button>
+            <Button variant="outline" onClick={() => toast({ title: "Ver todas", description: "Abrindo lista completa de propriedades..." })}>
+              Ver todas
+            </Button>
           </div>
 
           <Card className="overflow-hidden">
@@ -267,7 +368,7 @@ const DashboardAdmin = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {mockChacaras.map((chacara) => (
+                  {chacaras.map((chacara) => (
                     <tr key={chacara.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {chacara.nome}
@@ -287,8 +388,33 @@ const DashboardAdmin = () => {
                         {chacara.receita}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                        <Button size="sm" variant="outline">Ver</Button>
-                        <Button size="sm" variant="outline">Aprovar</Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handlePropertyAction(chacara.id, 'Ver')}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Ver
+                        </Button>
+                        {chacara.status === 'pendente' ? (
+                          <Button 
+                            size="sm" 
+                            className="bg-green-500 hover:bg-green-600 text-white"
+                            onClick={() => handlePropertyAction(chacara.id, 'aprovar')}
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            Aprovar
+                          </Button>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handlePropertyAction(chacara.id, 'Editar')}
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Editar
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}

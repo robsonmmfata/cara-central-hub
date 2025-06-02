@@ -1,13 +1,23 @@
 
-import { useState } from 'react';
 import { Layout } from "@/components/Layout";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, Star, ArrowLeft, CreditCard } from "lucide-react";
+import { 
+  Calendar, 
+  Users, 
+  MapPin, 
+  Star, 
+  Wifi, 
+  Car, 
+  Utensils, 
+  Waves,
+  CreditCard,
+  DollarSign
+} from "lucide-react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -15,107 +25,126 @@ const ReservaChacara = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const chacaraId = searchParams.get('id') || '1';
+  const propertyId = searchParams.get('id');
   
-  const [formData, setFormData] = useState({
+  const [reservaData, setReservaData] = useState({
     checkIn: '',
     checkOut: '',
-    guests: 1,
-    observations: '',
-    paymentMethod: 'cartao'
+    hospedes: 2,
+    nomeCompleto: '',
+    email: '',
+    telefone: '',
+    observacoes: '',
+    metodoPagamento: 'pix'
   });
 
-  // Mock data para a chácara - em um app real viria de uma API
-  const chacara = {
-    id: chacaraId,
-    nome: "Chácara Vista Verde",
-    localizacao: "Atibaia, SP",
-    preco: 350,
-    capacidade: "Até 20 pessoas",
+  // Mock da propriedade baseado no ID
+  const property = {
+    id: propertyId || '1',
+    nome: 'Chácara Vista Verde',
+    localizacao: 'Ibiúna, SP',
+    preco: 420,
+    capacidade: '8 pessoas',
     rating: 4.8,
-    imagem: "/placeholder.svg",
-    descricao: "Linda chácara com vista para as montanhas, ideal para eventos e confraternizações.",
-    comodidades: ['Wi-Fi', 'Estacionamento', 'Cozinha Completa', 'Piscina', 'Churrasqueira', 'Jardim']
+    imagem: '/placeholder.svg',
+    comodidades: ['Wi-Fi', 'Estacionamento', 'Cozinha', 'Piscina']
   };
 
-  const calculateTotal = () => {
-    if (!formData.checkIn || !formData.checkOut) return 0;
+  const calcularTotal = () => {
+    if (!reservaData.checkIn || !reservaData.checkOut) return 0;
     
-    const checkIn = new Date(formData.checkIn);
-    const checkOut = new Date(formData.checkOut);
-    const diffTime = Math.abs(checkOut.getTime() - checkIn.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const inicio = new Date(reservaData.checkIn);
+    const fim = new Date(reservaData.checkOut);
+    const dias = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
     
-    return diffDays * chacara.preco;
+    return dias > 0 ? dias * property.preco : 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.checkIn || !formData.checkOut) {
+  const handleFinalizarReserva = () => {
+    // Validações
+    if (!reservaData.checkIn || !reservaData.checkOut || !reservaData.nomeCompleto || !reservaData.email) {
       toast({
-        title: "Erro",
-        description: "Por favor, selecione as datas de check-in e check-out.",
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios para continuar.",
         variant: "destructive"
       });
       return;
     }
 
-    const total = calculateTotal();
-    
-    toast({
-      title: "Reserva realizada com sucesso!",
-      description: `Sua reserva para ${chacara.nome} foi confirmada. Total: R$ ${total.toLocaleString()}`,
+    const total = calcularTotal();
+    if (total <= 0) {
+      toast({
+        title: "Datas inválidas",
+        description: "Verifique as datas de check-in e check-out.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log('Finalizando reserva:', {
+      property: property.nome,
+      ...reservaData,
+      total
     });
 
-    // Simular redirecionamento para página de pagamento
+    toast({
+      title: "Reserva confirmada!",
+      description: `Sua reserva para ${property.nome} foi confirmada. Redirecionando para check-in...`,
+    });
+
+    // Redirecionar para check-in após 2 segundos
     setTimeout(() => {
-      navigate('/pagamentos');
+      navigate('/checkin');
     }, 2000);
   };
+
+  const icons = [Wifi, Car, Utensils, Waves];
+  const total = calcularTotal();
 
   return (
     <Layout>
       <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Reservar Chácara</h1>
-            <p className="text-gray-600">Complete os dados para finalizar sua reserva</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reservar Chácara</h1>
+          <p className="text-gray-600">Complete os dados para finalizar sua reserva</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Informações da Chácara */}
+          {/* Informações da Propriedade */}
           <div className="lg:col-span-2 space-y-6">
             <Card className="p-6">
               <div className="flex gap-6">
                 <img 
-                  src={chacara.imagem} 
-                  alt={chacara.nome}
+                  src={property.imagem} 
+                  alt={property.nome}
                   className="w-32 h-32 object-cover rounded-lg"
                 />
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold mb-2">{chacara.nome}</h2>
-                  <div className="flex items-center gap-2 text-gray-600 mb-2">
-                    <MapPin className="w-4 h-4" />
-                    <span>{chacara.localizacao}</span>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{property.nome}</h2>
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">{property.localizacao}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600 mb-2">
-                    <Users className="w-4 h-4" />
-                    <span>{chacara.capacidade}</span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">{property.capacidade}</span>
                   </div>
                   <div className="flex items-center gap-2 mb-4">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">{chacara.rating}</span>
-                    <span className="text-gray-500">(127 avaliações)</span>
+                    <span className="text-gray-600">{property.rating} (127 avaliações)</span>
                   </div>
-                  <div className="text-2xl font-bold text-teal-600">
-                    R$ {chacara.preco}/dia
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    {property.comodidades.map((comodidade, index) => {
+                      const IconComponent = icons[index] || Wifi;
+                      return (
+                        <div key={comodidade} className="flex items-center gap-2">
+                          <IconComponent className="w-4 h-4 text-teal-500" />
+                          <span className="text-sm text-gray-600">{comodidade}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -123,132 +152,176 @@ const ReservaChacara = () => {
 
             {/* Formulário de Reserva */}
             <Card className="p-6">
-              <h3 className="text-xl font-bold mb-4">Detalhes da Reserva</h3>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <h3 className="text-xl font-semibold mb-6">Dados da Reserva</h3>
+              
+              <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="checkIn">Data de Check-in</Label>
+                    <Label htmlFor="checkIn">Check-in</Label>
                     <Input
                       id="checkIn"
                       type="date"
-                      value={formData.checkIn}
-                      onChange={(e) => setFormData({...formData, checkIn: e.target.value})}
+                      value={reservaData.checkIn}
+                      onChange={(e) => setReservaData({...reservaData, checkIn: e.target.value})}
                       min={new Date().toISOString().split('T')[0]}
-                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="checkOut">Data de Check-out</Label>
+                    <Label htmlFor="checkOut">Check-out</Label>
                     <Input
                       id="checkOut"
                       type="date"
-                      value={formData.checkOut}
-                      onChange={(e) => setFormData({...formData, checkOut: e.target.value})}
-                      min={formData.checkIn || new Date().toISOString().split('T')[0]}
-                      required
+                      value={reservaData.checkOut}
+                      onChange={(e) => setReservaData({...reservaData, checkOut: e.target.value})}
+                      min={reservaData.checkIn || new Date().toISOString().split('T')[0]}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="guests">Número de Hóspedes</Label>
+                  <Label htmlFor="hospedes">Número de Hóspedes</Label>
                   <Input
-                    id="guests"
+                    id="hospedes"
                     type="number"
                     min="1"
-                    max="20"
-                    value={formData.guests}
-                    onChange={(e) => setFormData({...formData, guests: parseInt(e.target.value)})}
-                    required
+                    max="8"
+                    value={reservaData.hospedes}
+                    onChange={(e) => setReservaData({...reservaData, hospedes: parseInt(e.target.value)})}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="nome">Nome Completo *</Label>
+                    <Input
+                      id="nome"
+                      value={reservaData.nomeCompleto}
+                      onChange={(e) => setReservaData({...reservaData, nomeCompleto: e.target.value})}
+                      placeholder="Seu nome completo"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">E-mail *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={reservaData.email}
+                      onChange={(e) => setReservaData({...reservaData, email: e.target.value})}
+                      placeholder="seu@email.com"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="telefone">Telefone</Label>
+                  <Input
+                    id="telefone"
+                    value={reservaData.telefone}
+                    onChange={(e) => setReservaData({...reservaData, telefone: e.target.value})}
+                    placeholder="(11) 99999-9999"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="observations">Observações (Opcional)</Label>
-                  <Textarea
-                    id="observations"
-                    placeholder="Alguma observação especial ou solicitação..."
-                    value={formData.observations}
-                    onChange={(e) => setFormData({...formData, observations: e.target.value})}
-                    rows={3}
+                  <Label htmlFor="observacoes">Observações</Label>
+                  <textarea
+                    id="observacoes"
+                    className="w-full border border-gray-300 rounded-lg p-3 min-h-20"
+                    value={reservaData.observacoes}
+                    onChange={(e) => setReservaData({...reservaData, observacoes: e.target.value})}
+                    placeholder="Alguma observação especial sobre sua estadia..."
                   />
                 </div>
-
-                <div>
-                  <Label htmlFor="paymentMethod">Forma de Pagamento</Label>
-                  <select
-                    id="paymentMethod"
-                    value={formData.paymentMethod}
-                    onChange={(e) => setFormData({...formData, paymentMethod: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg p-2"
-                  >
-                    <option value="cartao">Cartão de Crédito</option>
-                    <option value="pix">PIX</option>
-                    <option value="transferencia">Transferência Bancária</option>
-                  </select>
-                </div>
-              </form>
+              </div>
             </Card>
           </div>
 
           {/* Resumo da Reserva */}
-          <div className="space-y-6">
-            <Card className="p-6 sticky top-24">
-              <h3 className="text-xl font-bold mb-4">Resumo da Reserva</h3>
+          <div>
+            <Card className="p-6 sticky top-6">
+              <h3 className="text-xl font-semibold mb-4">Resumo da Reserva</h3>
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
-                  <span>Check-in:</span>
-                  <span className="font-medium">
-                    {formData.checkIn ? new Date(formData.checkIn).toLocaleDateString('pt-BR') : '--'}
-                  </span>
+                  <span className="text-gray-600">Propriedade:</span>
+                  <span className="font-medium">{property.nome}</span>
                 </div>
+                
+                {reservaData.checkIn && reservaData.checkOut && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Check-in:</span>
+                      <span className="font-medium">{new Date(reservaData.checkIn).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Check-out:</span>
+                      <span className="font-medium">{new Date(reservaData.checkOut).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Dias:</span>
+                      <span className="font-medium">{Math.ceil((new Date(reservaData.checkOut).getTime() - new Date(reservaData.checkIn).getTime()) / (1000 * 60 * 60 * 24))} dias</span>
+                    </div>
+                  </>
+                )}
+                
                 <div className="flex justify-between">
-                  <span>Check-out:</span>
-                  <span className="font-medium">
-                    {formData.checkOut ? new Date(formData.checkOut).toLocaleDateString('pt-BR') : '--'}
-                  </span>
+                  <span className="text-gray-600">Hóspedes:</span>
+                  <span className="font-medium">{reservaData.hospedes} pessoas</span>
                 </div>
+                
                 <div className="flex justify-between">
-                  <span>Hóspedes:</span>
-                  <span className="font-medium">{formData.guests}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Diárias:</span>
-                  <span className="font-medium">
-                    {formData.checkIn && formData.checkOut ? 
-                      Math.ceil(Math.abs(new Date(formData.checkOut).getTime() - new Date(formData.checkIn).getTime()) / (1000 * 60 * 60 * 24)) 
-                      : 0
-                    } dias
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Valor por dia:</span>
-                  <span className="font-medium">R$ {chacara.preco.toLocaleString()}</span>
+                  <span className="text-gray-600">Valor/dia:</span>
+                  <span className="font-medium">R$ {property.preco.toLocaleString('pt-BR')}</span>
                 </div>
               </div>
 
               <div className="border-t pt-4 mb-6">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total:</span>
-                  <span className="text-teal-600">R$ {calculateTotal().toLocaleString()}</span>
+                  <span className="text-teal-600">R$ {total.toLocaleString('pt-BR')}</span>
+                </div>
+              </div>
+
+              {/* Método de Pagamento */}
+              <div className="mb-6">
+                <Label className="text-base font-semibold mb-3 block">Método de Pagamento</Label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="pagamento"
+                      value="pix"
+                      checked={reservaData.metodoPagamento === 'pix'}
+                      onChange={(e) => setReservaData({...reservaData, metodoPagamento: e.target.value})}
+                    />
+                    <DollarSign className="w-5 h-5 text-green-500" />
+                    <span>PIX (5% desconto)</span>
+                  </label>
+                  <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="radio"
+                      name="pagamento"
+                      value="cartao"
+                      checked={reservaData.metodoPagamento === 'cartao'}
+                      onChange={(e) => setReservaData({...reservaData, metodoPagamento: e.target.value})}
+                    />
+                    <CreditCard className="w-5 h-5 text-blue-500" />
+                    <span>Cartão de Crédito</span>
+                  </label>
                 </div>
               </div>
 
               <Button 
-                onClick={handleSubmit}
-                className="w-full bg-teal-600 hover:bg-teal-700"
-                disabled={!formData.checkIn || !formData.checkOut}
+                onClick={handleFinalizarReserva}
+                className="w-full bg-teal-600 hover:bg-teal-700 text-lg py-3"
+                disabled={!reservaData.checkIn || !reservaData.checkOut}
               >
-                <CreditCard className="w-4 h-4 mr-2" />
-                Confirmar Reserva
+                Finalizar Reserva
               </Button>
 
-              <div className="mt-4 text-center">
-                <Badge variant="secondary" className="text-xs">
-                  Cancelamento gratuito até 24h antes
-                </Badge>
-              </div>
+              <p className="text-xs text-gray-500 mt-3 text-center">
+                Ao finalizar, você será redirecionado para o check-in digital
+              </p>
             </Card>
           </div>
         </div>
