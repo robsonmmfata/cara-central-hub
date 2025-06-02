@@ -6,8 +6,29 @@ import { Button } from "@/components/ui/button";
 import { FileText, BarChart3, TrendingUp, Download } from "lucide-react";
 import { useState } from "react";
 
+interface GeneratedReport {
+  type: string;
+  dateRange: { start: string; end: string };
+  generatedAt: Date;
+  filename: string;
+}
+
 const Relatorios = () => {
   const [showReportsModal, setShowReportsModal] = useState(false);
+  const [recentReports, setRecentReports] = useState<GeneratedReport[]>([
+    {
+      type: 'clientes',
+      dateRange: { start: '2024-03-01', end: '2024-03-31' },
+      generatedAt: new Date('2024-04-01'),
+      filename: 'relatorio_clientes_2024-04-01.txt'
+    },
+    {
+      type: 'financeiro',
+      dateRange: { start: '2024-03-01', end: '2024-03-31' },
+      generatedAt: new Date('2024-03-31'),
+      filename: 'relatorio_financeiro_2024-03-31.txt'
+    }
+  ]);
 
   const reportTypes = [
     {
@@ -39,6 +60,21 @@ const Relatorios = () => {
       color: 'bg-orange-50 border-orange-200'
     }
   ];
+
+  const handleReportGenerated = (reportData: GeneratedReport) => {
+    setRecentReports(prev => [reportData, ...prev].slice(0, 10)); // Manter apenas os 10 mais recentes
+  };
+
+  const handleDownloadReport = (filename: string) => {
+    // Simular download do relatório
+    console.log('Baixando relatório:', filename);
+    // Em um caso real, você faria uma requisição para buscar o arquivo
+  };
+
+  const getReportTypeName = (type: string) => {
+    const reportType = reportTypes.find(r => r.id === type);
+    return reportType?.name || type;
+  };
 
   return (
     <Layout>
@@ -77,33 +113,38 @@ const Relatorios = () => {
 
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">Relatórios Recentes</h2>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium">Relatório de Clientes - Março 2024</p>
-                <p className="text-sm text-gray-600">Gerado em 01/04/2024</p>
-              </div>
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Baixar
-              </Button>
+          {recentReports.length > 0 ? (
+            <div className="space-y-3">
+              {recentReports.map((report, index) => (
+                <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium">
+                      {getReportTypeName(report.type)} - {report.dateRange.start || 'Início'} a {report.dateRange.end || 'Hoje'}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Gerado em {report.generatedAt.toLocaleDateString('pt-BR')} às {report.generatedAt.toLocaleTimeString('pt-BR')}
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleDownloadReport(report.filename)}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Baixar
+                  </Button>
+                </div>
+              ))}
             </div>
-            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium">Relatório Financeiro - Março 2024</p>
-                <p className="text-sm text-gray-600">Gerado em 31/03/2024</p>
-              </div>
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Baixar
-              </Button>
-            </div>
-          </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">Nenhum relatório gerado ainda</p>
+          )}
         </Card>
 
         <ReportsModal 
           isOpen={showReportsModal} 
-          onClose={() => setShowReportsModal(false)} 
+          onClose={() => setShowReportsModal(false)}
+          onReportGenerated={handleReportGenerated}
         />
       </div>
     </Layout>

@@ -4,7 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { DollarSign, TrendingUp, Clock, CheckCircle, Search } from "lucide-react";
+import { DollarSign, TrendingUp, Clock, CheckCircle, Search, Eye, Check } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Payment {
   id: string;
@@ -18,7 +19,8 @@ interface Payment {
 }
 
 export function PaymentsManager() {
-  const [payments] = useState<Payment[]>([
+  const { toast } = useToast();
+  const [payments, setPayments] = useState<Payment[]>([
     {
       id: '1',
       client: 'João Silva',
@@ -53,6 +55,28 @@ export function PaymentsManager() {
     payment.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
     payment.property.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleViewPayment = (payment: Payment) => {
+    toast({
+      title: "Detalhes do Pagamento",
+      description: `${payment.client} - ${payment.property} - R$ ${payment.amount.toLocaleString()}`,
+    });
+    console.log('Visualizando pagamento:', payment);
+  };
+
+  const handleConfirmPayment = (paymentId: string) => {
+    setPayments(prev => prev.map(payment => 
+      payment.id === paymentId 
+        ? { ...payment, status: 'pago' as const, paymentDate: new Date().toISOString().split('T')[0], method: 'PIX' }
+        : payment
+    ));
+    
+    const payment = payments.find(p => p.id === paymentId);
+    toast({
+      title: "Pagamento confirmado!",
+      description: `Pagamento de ${payment?.client} foi confirmado com sucesso.`,
+    });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -186,9 +210,21 @@ export function PaymentsManager() {
                     {payment.method || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                    <Button size="sm" variant="outline">Ver</Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleViewPayment(payment)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Ver
+                    </Button>
                     {payment.status === 'pendente' && (
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                      <Button 
+                        size="sm" 
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => handleConfirmPayment(payment.id)}
+                      >
+                        <Check className="h-4 w-4 mr-1" />
                         Confirmar
                       </Button>
                     )}

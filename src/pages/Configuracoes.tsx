@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Camera, Save, User, Mail, Lock, MapPin, Phone } from "lucide-react";
+import { Camera, Save, User, Mail, Lock, MapPin, Phone, Shield, Bell } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,12 +18,24 @@ const Configuracoes = () => {
     telefone: '(11) 99999-9999',
     endereco: 'Rua das Flores, 123',
     cidade: 'São Paulo, SP',
+    cep: '01234-567',
     senha: '',
     novaSenha: '',
-    confirmarSenha: ''
+    confirmarSenha: '',
+    notificacoes: true,
+    emailMarketing: false
   });
 
   const handleSave = () => {
+    if (userData.novaSenha && userData.novaSenha !== userData.confirmarSenha) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     console.log('Dados salvos:', userData);
     toast({
       title: "Configurações salvas!",
@@ -49,7 +61,10 @@ const Configuracoes = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Photo */}
           <Card className="p-6 h-fit">
-            <h2 className="text-xl font-semibold mb-4">Foto de Perfil</h2>
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Foto de Perfil
+            </h2>
             <div className="flex flex-col items-center space-y-4">
               <Avatar className="w-32 h-32">
                 <AvatarImage src="/placeholder.svg" />
@@ -65,8 +80,9 @@ const Configuracoes = () => {
             </div>
           </Card>
 
-          {/* Personal Information */}
+          {/* Main Settings */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Personal Information */}
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                 <User className="w-5 h-5" />
@@ -104,8 +120,8 @@ const Configuracoes = () => {
                 Endereço
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="md:col-span-2">
                   <Label htmlFor="endereco">Endereço</Label>
                   <Input
                     id="endereco"
@@ -120,6 +136,15 @@ const Configuracoes = () => {
                     id="cidade"
                     value={userData.cidade}
                     onChange={(e) => setUserData({...userData, cidade: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="cep">CEP</Label>
+                  <Input
+                    id="cep"
+                    value={userData.cep}
+                    onChange={(e) => setUserData({...userData, cep: e.target.value})}
                   />
                 </div>
               </div>
@@ -150,7 +175,10 @@ const Configuracoes = () => {
 
               <Separator className="my-6" />
 
-              <h3 className="text-lg font-medium mb-4">Alterar Senha</h3>
+              <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Alterar Senha
+              </h3>
               
               <div className="space-y-4">
                 <div>
@@ -183,6 +211,48 @@ const Configuracoes = () => {
                       onChange={(e) => setUserData({...userData, confirmarSenha: e.target.value})}
                     />
                   </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Notifications */}
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <Bell className="w-5 h-5" />
+                Notificações
+              </h2>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Notificações de Reservas</p>
+                    <p className="text-sm text-gray-600">Receba alertas sobre suas reservas</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={userData.notificacoes}
+                      onChange={(e) => setUserData({...userData, notificacoes: e.target.checked})}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">E-mails de Marketing</p>
+                    <p className="text-sm text-gray-600">Receba ofertas e novidades</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={userData.emailMarketing}
+                      onChange={(e) => setUserData({...userData, emailMarketing: e.target.checked})}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
                 </div>
               </div>
             </Card>

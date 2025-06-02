@@ -1,188 +1,294 @@
 
 import { Layout } from "@/components/Layout";
-import { StatsCard } from "@/components/StatsCard";
-import { ClientCard } from "@/components/ClientCard";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  DollarSign, 
-  Users, 
-  Calendar, 
-  TrendingUp, 
-  Plus,
-  Clock,
-  Star,
-  AlertCircle
-} from "lucide-react";
+import { Calendar, Clock, MapPin, Users, Plus, Eye, Edit, CheckCircle, X } from "lucide-react";
+import { useState } from "react";
+import { NewClientForm } from "@/components/NewClientForm";
+import { useToast } from "@/hooks/use-toast";
 
-const mockClients = [
-  {
-    id: '1',
-    name: 'João Ribeiro',
-    phone: '(11) 91234-5678',
-    reservations: 5,
-    totalSpent: 4500,
-    status: 'VIP' as const,
-  },
-  {
-    id: '2',
-    name: 'Maria Souza',
-    phone: '(11) 99888-7766',
-    reservations: 3,
-    totalSpent: 2700,
-    status: 'Regular' as const,
-  },
-  {
-    id: '3',
-    name: 'Carlos Silva',
-    phone: '(11) 95555-3322',
-    reservations: 2,
-    totalSpent: 1800,
-    status: 'Bloqueado' as const,
-  },
-];
+interface Reservation {
+  id: string;
+  client: string;
+  property: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  status: 'confirmada' | 'pendente' | 'cancelada';
+  total: number;
+}
 
 const Index = () => {
-  const today = new Date().toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  const { toast } = useToast();
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [reservations, setReservations] = useState<Reservation[]>([
+    {
+      id: '1',
+      client: 'João Silva',
+      property: 'Chácara Vista Verde',
+      checkIn: '2024-04-15',
+      checkOut: '2024-04-17',
+      guests: 8,
+      status: 'confirmada',
+      total: 1200
+    },
+    {
+      id: '2',
+      client: 'Maria Santos',
+      property: 'Sítio do Sol',
+      checkIn: '2024-04-20',
+      checkOut: '2024-04-22',
+      guests: 6,
+      status: 'pendente',
+      total: 800
+    },
+    {
+      id: '3',
+      client: 'Carlos Oliveira',
+      property: 'Chácara Recanto Feliz',
+      checkIn: '2024-04-25',
+      checkOut: '2024-04-28',
+      guests: 12,
+      status: 'confirmada',
+      total: 1800
+    }
+  ]);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmada': return 'bg-green-100 text-green-800';
+      case 'pendente': return 'bg-yellow-100 text-yellow-800';
+      case 'cancelada': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleViewReservation = (reservation: Reservation) => {
+    toast({
+      title: "Detalhes da Reserva",
+      description: `${reservation.client} - ${reservation.property}`,
+    });
+    console.log('Visualizando reserva:', reservation);
+  };
+
+  const handleEditReservation = (reservation: Reservation) => {
+    toast({
+      title: "Editar Reserva",
+      description: `Editando reserva de ${reservation.client}`,
+    });
+    console.log('Editando reserva:', reservation);
+  };
+
+  const handleConfirmReservation = (reservationId: string) => {
+    setReservations(prev => prev.map(reservation => 
+      reservation.id === reservationId 
+        ? { ...reservation, status: 'confirmada' as const }
+        : reservation
+    ));
+    
+    const reservation = reservations.find(r => r.id === reservationId);
+    toast({
+      title: "Reserva confirmada!",
+      description: `Reserva de ${reservation?.client} foi confirmada.`,
+    });
+  };
+
+  const handleCancelReservation = (reservationId: string) => {
+    setReservations(prev => prev.map(reservation => 
+      reservation.id === reservationId 
+        ? { ...reservation, status: 'cancelada' as const }
+        : reservation
+    ));
+    
+    const reservation = reservations.find(r => r.id === reservationId);
+    toast({
+      title: "Reserva cancelada",
+      description: `Reserva de ${reservation?.client} foi cancelada.`,
+    });
+  };
+
+  const handleNewClientSave = (clientData: any) => {
+    console.log('Novo cliente adicionado:', clientData);
+    toast({
+      title: "Cliente adicionado!",
+      description: `${clientData.nome} foi adicionado com sucesso.`,
+    });
+  };
+
+  const stats = {
+    total: reservations.length,
+    confirmadas: reservations.filter(r => r.status === 'confirmada').length,
+    pendentes: reservations.filter(r => r.status === 'pendente').length,
+    canceladas: reservations.filter(r => r.status === 'cancelada').length
+  };
 
   return (
     <Layout>
       <div className="space-y-8 animate-fade-in">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-farm-blue-600 to-farm-blue-700 rounded-2xl p-8 text-white shadow-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Painel de Gestão da Chácara</h1>
-              <p className="text-farm-blue-100 text-lg">Sistema de administração e controle de reservas</p>
-            </div>
-            <div className="text-right">
-              <p className="text-farm-blue-200 text-sm">Hoje</p>
-              <p className="text-xl font-medium capitalize">{today.split(',')[0]}</p>
-              <p className="text-farm-blue-100">{today.split(',')[1]}</p>
-            </div>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Reservas</h1>
+            <p className="text-gray-600">Gerencie todas as reservas das suas propriedades</p>
           </div>
+          <Button 
+            onClick={() => setShowNewClientForm(true)}
+            className="bg-farm-blue-500 hover:bg-farm-blue-600"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Cliente
+          </Button>
         </div>
 
-        {/* Balance Card */}
-        <Card className="bg-gradient-to-r from-farm-green-50 to-farm-green-100 border-farm-green-200 p-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Painel Geral</h2>
-              <div className="flex items-baseline gap-2">
-                <span className="text-gray-600 text-lg">Saldo Total:</span>
-                <span className="text-4xl font-bold text-farm-green-600">R$ 12.450,00</span>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-blue-500 rounded-xl">
+                <Calendar className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-blue-700">{stats.total}</p>
+                <p className="text-sm text-blue-600">Total</p>
               </div>
             </div>
-            <div className="text-right">
-              <Badge variant="outline" className="border-farm-green-500 text-farm-green-700 bg-white">
-                <TrendingUp className="w-3 h-3 mr-1" />
-                +15% este mês
-              </Badge>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-green-500 rounded-xl">
+                <CheckCircle className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-green-700">{stats.confirmadas}</p>
+                <p className="text-sm text-green-600">Confirmadas</p>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatsCard
-            title="Clientes Ativos"
-            value="124"
-            icon={Users}
-            trend="+12% este mês"
-            trendUp={true}
-          />
-          <StatsCard
-            title="Reservas Hoje"
-            value="8"
-            icon={Calendar}
-            bgColor="bg-farm-orange-50"
-            iconColor="text-farm-orange-500"
-          />
-          <StatsCard
-            title="Receita Mensal"
-            value="R$ 18.5K"
-            icon={DollarSign}
-            trend="+8% vs mês anterior"
-            trendUp={true}
-            bgColor="bg-farm-green-50"
-            iconColor="text-farm-green-500"
-          />
-          <StatsCard
-            title="Taxa Ocupação"
-            value="87%"
-            icon={Star}
-            bgColor="bg-yellow-50"
-            iconColor="text-yellow-500"
-          />
-        </div>
-
-        {/* Clients Section */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-farm-blue-700">Clientes</h2>
-              <p className="text-gray-600">Visualize, edite e adicione novos clientes.</p>
-            </div>
-            <Button className="bg-farm-blue-500 hover:bg-farm-blue-600 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Cliente
-            </Button>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800">Lista de Clientes</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {mockClients.map((client) => (
-                <ClientCard key={client.id} client={client} />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="p-6 bg-gradient-to-br from-farm-blue-50 to-farm-blue-100 border-farm-blue-200">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-farm-blue-500 rounded-xl">
+          <Card className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-yellow-500 rounded-xl">
                 <Clock className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800">Próximas Reservas</h3>
-                <p className="text-sm text-gray-600">3 check-ins hoje</p>
+                <p className="text-2xl font-bold text-yellow-700">{stats.pendentes}</p>
+                <p className="text-sm text-yellow-600">Pendentes</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 bg-gradient-to-br from-farm-orange-50 to-farm-orange-100 border-farm-orange-200">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-farm-orange-500 rounded-xl">
-                <AlertCircle className="h-6 w-6 text-white" />
+          <Card className="p-6 bg-gradient-to-br from-red-50 to-red-100">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-red-500 rounded-xl">
+                <X className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800">Tarefas Pendentes</h3>
-                <p className="text-sm text-gray-600">5 itens para revisar</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 bg-gradient-to-br from-farm-green-50 to-farm-green-100 border-farm-green-200">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-farm-green-500 rounded-xl">
-                <DollarSign className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">Pagamentos</h3>
-                <p className="text-sm text-gray-600">2 pendentes</p>
+                <p className="text-2xl font-bold text-red-700">{stats.canceladas}</p>
+                <p className="text-sm text-red-600">Canceladas</p>
               </div>
             </div>
           </Card>
         </div>
+
+        {/* Reservations Table */}
+        <Card className="overflow-hidden">
+          <div className="p-6 border-b">
+            <h2 className="text-xl font-semibold">Reservas Recentes</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Propriedade</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check-in</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check-out</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hóspedes</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {reservations.map((reservation) => (
+                  <tr key={reservation.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {reservation.client}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {reservation.property}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(reservation.checkIn).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(reservation.checkOut).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        {reservation.guests}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge className={getStatusColor(reservation.status)}>
+                        {reservation.status}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                      R$ {reservation.total.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleViewReservation(reservation)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleEditReservation(reservation)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Editar
+                      </Button>
+                      {reservation.status === 'pendente' && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => handleConfirmReservation(reservation.id)}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Confirmar
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleCancelReservation(reservation.id)}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Cancelar
+                          </Button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <NewClientForm 
+          isOpen={showNewClientForm} 
+          onClose={() => setShowNewClientForm(false)}
+          onSave={handleNewClientSave}
+        />
       </div>
     </Layout>
   );
