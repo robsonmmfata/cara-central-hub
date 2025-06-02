@@ -69,20 +69,21 @@ const DashboardVisitante = () => {
   });
 
   const handleFavorite = (propertyId: number) => {
-    setChacaras(prev => 
+    const updateChacaras = (prev: typeof mockChacaras) => 
       prev.map(chacara => 
         chacara.id === propertyId 
           ? { ...chacara, favorito: !chacara.favorito }
           : chacara
-      )
-    );
-    setFilteredChacaras(prev => 
-      prev.map(chacara => 
-        chacara.id === propertyId 
-          ? { ...chacara, favorito: !chacara.favorito }
-          : chacara
-      )
-    );
+      );
+    
+    setChacaras(updateChacaras);
+    setFilteredChacaras(updateChacaras);
+    
+    const property = chacaras.find(c => c.id === propertyId);
+    toast({
+      title: property?.favorito ? "Removido dos favoritos" : "Adicionado aos favoritos",
+      description: property?.nome,
+    });
   };
 
   const handleViewDetails = (property: typeof mockChacaras[0]) => {
@@ -94,19 +95,22 @@ const DashboardVisitante = () => {
     let filtered = chacaras;
 
     // Filtrar por localização
-    if (searchFilters.localizacao) {
+    if (searchFilters.localizacao.trim()) {
       filtered = filtered.filter(chacara => 
-        chacara.localizacao.toLowerCase().includes(searchFilters.localizacao.toLowerCase())
+        chacara.localizacao.toLowerCase().includes(searchFilters.localizacao.toLowerCase()) ||
+        chacara.nome.toLowerCase().includes(searchFilters.localizacao.toLowerCase())
       );
     }
 
     // Filtrar por capacidade (pessoas)
-    if (searchFilters.pessoas) {
+    if (searchFilters.pessoas.trim()) {
       const pessoasNum = parseInt(searchFilters.pessoas);
-      filtered = filtered.filter(chacara => {
-        const capacidade = parseInt(chacara.capacidade.match(/\d+/)?.[0] || '0');
-        return capacidade >= pessoasNum;
-      });
+      if (!isNaN(pessoasNum)) {
+        filtered = filtered.filter(chacara => {
+          const capacidade = parseInt(chacara.capacidade.match(/\d+/)?.[0] || '0');
+          return capacidade >= pessoasNum;
+        });
+      }
     }
 
     setFilteredChacaras(filtered);
@@ -115,14 +119,67 @@ const DashboardVisitante = () => {
       title: "Busca realizada!",
       description: `Encontradas ${filtered.length} chácaras que atendem aos critérios.`,
     });
-    console.log('Filtros de busca:', searchFilters);
-    console.log('Resultados filtrados:', filtered);
+    console.log('Filtros de busca aplicados:', searchFilters);
+    console.log('Resultados da busca:', filtered);
   };
 
   const handleAdvancedFilters = () => {
+    // Aplicar filtros mais específicos
+    let filtered = chacaras;
+
+    // Se há data de check-in e check-out, simular disponibilidade
+    if (searchFilters.checkin && searchFilters.checkout) {
+      const checkinDate = new Date(searchFilters.checkin);
+      const checkoutDate = new Date(searchFilters.checkout);
+      
+      if (checkoutDate <= checkinDate) {
+        toast({
+          title: "Erro nas datas",
+          description: "A data de check-out deve ser posterior ao check-in.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Simular que todas as chácaras estão disponíveis para as datas selecionadas
+      filtered = chacaras.filter(chacara => {
+        // Aqui você faria uma verificação real de disponibilidade
+        return true; // Por enquanto, todas estão disponíveis
+      });
+    }
+
+    // Aplicar outros filtros já existentes
+    if (searchFilters.localizacao.trim()) {
+      filtered = filtered.filter(chacara => 
+        chacara.localizacao.toLowerCase().includes(searchFilters.localizacao.toLowerCase()) ||
+        chacara.nome.toLowerCase().includes(searchFilters.localizacao.toLowerCase())
+      );
+    }
+
+    if (searchFilters.pessoas.trim()) {
+      const pessoasNum = parseInt(searchFilters.pessoas);
+      if (!isNaN(pessoasNum)) {
+        filtered = filtered.filter(chacara => {
+          const capacidade = parseInt(chacara.capacidade.match(/\d+/)?.[0] || '0');
+          return capacidade >= pessoasNum;
+        });
+      }
+    }
+
+    setFilteredChacaras(filtered);
+    
     toast({
-      title: "Filtros Avançados",
-      description: "Funcionalidade de filtros avançados em desenvolvimento.",
+      title: "Filtros avançados aplicados!",
+      description: `${filtered.length} chácaras encontradas com os critérios selecionados.`,
+    });
+  };
+
+  const clearFilters = () => {
+    setSearchFilters({ checkin: '', checkout: '', pessoas: '', localizacao: '' });
+    setFilteredChacaras(chacaras);
+    toast({
+      title: "Filtros limpos",
+      description: "Mostrando todas as chácaras disponíveis.",
     });
   };
 
@@ -188,6 +245,7 @@ const DashboardVisitante = () => {
                 id="checkin" 
                 value={searchFilters.checkin}
                 onChange={(e) => setSearchFilters({...searchFilters, checkin: e.target.value})}
+                min={new Date().toISOString().split('T')[0]}
               />
             </div>
             <div>
@@ -197,6 +255,7 @@ const DashboardVisitante = () => {
                 id="checkout" 
                 value={searchFilters.checkout}
                 onChange={(e) => setSearchFilters({...searchFilters, checkout: e.target.value})}
+                min={searchFilters.checkin || new Date().toISOString().split('T')[0]}
               />
             </div>
             <div>
@@ -205,6 +264,7 @@ const DashboardVisitante = () => {
                 type="number" 
                 id="pessoas" 
                 placeholder="Ex: 20" 
+                min="1"
                 value={searchFilters.pessoas}
                 onChange={(e) => setSearchFilters({...searchFilters, pessoas: e.target.value})}
               />
@@ -228,6 +288,9 @@ const DashboardVisitante = () => {
               <Filter className="w-4 h-4 mr-2" />
               Filtros Avançados
             </Button>
+            <Button variant="outline" onClick={clearFilters}>
+              Limpar Filtros
+            </Button>
           </div>
         </Card>
 
@@ -237,7 +300,7 @@ const DashboardVisitante = () => {
             <h2 className="text-2xl font-bold text-gray-800">
               Chácaras Disponíveis ({filteredChacaras.length})
             </h2>
-            <Button variant="outline">Ver todas</Button>
+            <Button variant="outline" onClick={() => setFilteredChacaras(chacaras)}>Ver todas</Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -292,10 +355,7 @@ const DashboardVisitante = () => {
               <Button 
                 variant="outline" 
                 className="mt-4"
-                onClick={() => {
-                  setSearchFilters({ checkin: '', checkout: '', pessoas: '', localizacao: '' });
-                  setFilteredChacaras(chacaras);
-                }}
+                onClick={clearFilters}
               >
                 Limpar Filtros
               </Button>

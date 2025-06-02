@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Eye, Edit, Calendar, Users, MapPin, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface Reservation {
   id: string;
@@ -21,6 +22,7 @@ interface Reservation {
 
 const Reservas = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([
@@ -55,6 +57,14 @@ const Reservas = () => {
       total: 950
     }
   ]);
+
+  const handleNewReservation = () => {
+    navigate('/dashboard-visitante');
+    toast({
+      title: "Redirecionando...",
+      description: "Vá para a aba de chácaras disponíveis para fazer uma nova reserva.",
+    });
+  };
 
   const handleViewReservation = (reservation: Reservation) => {
     setSelectedReservation(reservation);
@@ -99,7 +109,10 @@ const Reservas = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Reservas</h1>
             <p className="text-gray-600">Gerencie todas as reservas das propriedades</p>
           </div>
-          <Button className="bg-farm-blue-500 hover:bg-farm-blue-600">
+          <Button 
+            className="bg-farm-blue-500 hover:bg-farm-blue-600"
+            onClick={handleNewReservation}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Nova Reserva
           </Button>

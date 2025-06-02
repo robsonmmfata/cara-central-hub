@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, MapPin, Users, Star, Wifi, Car, Utensils, Waves } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface Property {
   id: number;
@@ -28,15 +29,17 @@ interface PropertyDetailsModalProps {
 
 export function PropertyDetailsModal({ property, isOpen, onClose, onFavorite }: PropertyDetailsModalProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   if (!isOpen || !property) return null;
 
   const handleReservar = () => {
+    onClose();
+    navigate(`/reserva-chacara?id=${property.id}`);
     toast({
-      title: "Reserva iniciada!",
-      description: `Redirecionando para reserva de ${property.nome}`,
+      title: "Redirecionando...",
+      description: `Iniciando reserva para ${property.nome}`,
     });
-    // Aqui você implementaria a lógica de reserva
   };
 
   const handleFavorite = () => {
