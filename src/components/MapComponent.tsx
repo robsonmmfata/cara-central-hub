@@ -1,115 +1,153 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, Navigation } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+
+const mockChacaras = [
+  {
+    id: 1,
+    nome: "Chácara Vista Verde",
+    localizacao: "Atibaia, SP",
+    coordinates: [-46.5509, -23.1167] as [number, number],
+    disponivel: true,
+    preco: "R$ 350/dia"
+  },
+  {
+    id: 2,
+    nome: "Sítio do Sol",
+    localizacao: "Ibiúna, SP", 
+    coordinates: [-47.2233, -23.6567] as [number, number],
+    disponivel: true,
+    preco: "R$ 280/dia"
+  },
+  {
+    id: 3,
+    nome: "Chácara Recanto Feliz",
+    localizacao: "Mairiporã, SP",
+    coordinates: [-46.5867, -23.3167] as [number, number],
+    disponivel: false,
+    preco: "R$ 420/dia"
+  }
+];
 
 export function MapComponent() {
   const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
   const [mapboxToken, setMapboxToken] = useState('');
   const [showTokenInput, setShowTokenInput] = useState(true);
-  const { toast } = useToast();
 
-  const initializeMap = async () => {
-    if (!mapboxToken) {
-      toast({
-        title: "Token necessário",
-        description: "Por favor, insira seu token público do Mapbox.",
-        variant: "destructive"
-      });
-      return;
-    }
+  const initializeMap = () => {
+    if (!mapContainer.current || !mapboxToken) return;
 
-    try {
-      // Dinamically import mapbox-gl
-      const mapboxgl = await import('mapbox-gl');
-      
-      if (!mapContainer.current) return;
+    mapboxgl.accessToken = mapboxToken;
+    
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v11',
+      center: [-46.6333, -23.5505],
+      zoom: 9
+    });
 
-      mapboxgl.default.accessToken = mapboxToken;
-      
-      const map = new mapboxgl.default.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [-47.0, -23.5], // São Paulo region
-        zoom: 10
-      });
+    // Adicionar marcadores para cada chácara
+    mockChacaras.forEach((chacara) => {
+      const marker = new mapboxgl.Marker({
+        color: chacara.disponivel ? '#10B981' : '#EF4444'
+      })
+        .setLngLat(chacara.coordinates)
+        .setPopup(
+          new mapboxgl.Popup().setHTML(`
+            <div class="p-2">
+              <h3 class="font-bold">${chacara.nome}</h3>
+              <p class="text-sm text-gray-600">${chacara.localizacao}</p>
+              <p class="text-sm font-medium">${chacara.preco}</p>
+              <p class="text-xs ${chacara.disponivel ? 'text-green-600' : 'text-red-600'}">
+                ${chacara.disponivel ? 'Disponível' : 'Ocupada'}
+              </p>
+            </div>
+          `)
+        );
 
-      // Add navigation controls
-      map.addControl(new mapboxgl.default.NavigationControl());
+      if (map.current) {
+        marker.addTo(map.current);
+      }
+    });
 
-      // Add markers for example chacaras
-      const chacaras = [
-        { name: 'Chácara Vista Verde', coords: [-47.1, -23.4] },
-        { name: 'Sítio do Sol', coords: [-47.2, -23.6] },
-        { name: 'Chácara Recanto Feliz', coords: [-46.9, -23.5] }
-      ];
-
-      chacaras.forEach(chacara => {
-        new mapboxgl.default.Marker({ color: '#10B981' })
-          .setLngLat(chacara.coords)
-          .setPopup(new mapboxgl.default.Popup().setHTML(`<h3>${chacara.name}</h3>`))
-          .addTo(map);
-      });
-
-      setShowTokenInput(false);
-      toast({
-        title: "Mapa carregado!",
-        description: "O mapa foi carregado com sucesso.",
-      });
-
-    } catch (error) {
-      console.error('Erro ao carregar mapa:', error);
-      toast({
-        title: "Erro ao carregar mapa",
-        description: "Verifique se o token está correto.",
-        variant: "destructive"
-      });
-    }
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    setShowTokenInput(false);
   };
+
+  useEffect(() => {
+    return () => {
+      map.current?.remove();
+    };
+  }, []);
 
   if (showTokenInput) {
     return (
       <Card className="p-6">
-        <div className="text-center space-y-4">
-          <MapPin className="h-12 w-12 text-farm-blue-500 mx-auto" />
-          <h3 className="text-lg font-semibold">Configurar Mapa</h3>
-          <p className="text-gray-600 text-sm">
-            Para exibir o mapa, você precisa inserir seu token público do Mapbox.
-            <br />
-            Obtenha em: <a href="https://mapbox.com/" target="_blank" rel="noopener noreferrer" className="text-farm-blue-500 underline">mapbox.com</a>
-          </p>
-          <div className="max-w-md mx-auto space-y-3">
-            <Input
-              placeholder="Token público do Mapbox"
-              value={mapboxToken}
-              onChange={(e) => setMapboxToken(e.target.value)}
-            />
-            <Button onClick={initializeMap} className="w-full">
-              <Navigation className="h-4 w-4 mr-2" />
-              Carregar Mapa
-            </Button>
-          </div>
+        <h3 className="text-lg font-semibold mb-4">Configurar Mapbox</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Para visualizar o mapa, insira seu token público do Mapbox. 
+          Você pode obtê-lo em <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">mapbox.com</a>
+        </p>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Token público do Mapbox"
+            value={mapboxToken}
+            onChange={(e) => setMapboxToken(e.target.value)}
+            type="password"
+          />
+          <Button onClick={initializeMap} disabled={!mapboxToken}>
+            Carregar Mapa
+          </Button>
         </div>
       </Card>
     );
   }
 
   return (
-    <Card className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Localização das Chácaras</h3>
-        <Button variant="outline" size="sm" onClick={() => setShowTokenInput(true)}>
-          Reconfigurar
-        </Button>
-      </div>
-      <div 
-        ref={mapContainer} 
-        className="w-full h-96 rounded-lg border"
-        style={{ minHeight: '400px' }}
-      />
-    </Card>
+    <div className="space-y-6">
+      <Card className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-green-600">{mockChacaras.filter(c => c.disponivel).length}</p>
+            <p className="text-sm text-gray-600">Disponíveis</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-red-600">{mockChacaras.filter(c => !c.disponivel).length}</p>
+            <p className="text-sm text-gray-600">Ocupadas</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-blue-600">{mockChacaras.length}</p>
+            <p className="text-sm text-gray-600">Total</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-bold text-yellow-600">85%</p>
+            <p className="text-sm text-gray-600">Ocupação</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-4">
+        <div ref={mapContainer} className="w-full h-96 rounded-lg" />
+      </Card>
+
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Legenda</h3>
+        <div className="flex gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+            <span className="text-sm">Disponível</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+            <span className="text-sm">Ocupada</span>
+          </div>
+        </div>
+      </Card>
+    </div>
   );
 }

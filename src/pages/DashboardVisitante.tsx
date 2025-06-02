@@ -1,6 +1,7 @@
 
 import { Layout } from "@/components/Layout";
 import { StatsCard } from "@/components/StatsCard";
+import { PropertyDetailsModal } from "@/components/PropertyDetailsModal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,8 +13,11 @@ import {
   Heart,
   Star,
   Users,
-  Clock
+  Clock,
+  Filter
 } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const mockChacaras = [
   {
@@ -24,7 +28,8 @@ const mockChacaras = [
     capacidade: "Até 20 pessoas",
     rating: 4.8,
     favorito: false,
-    imagem: "/placeholder.svg"
+    imagem: "/placeholder.svg",
+    descricao: "Linda chácara com vista para as montanhas"
   },
   {
     id: 2,
@@ -34,7 +39,8 @@ const mockChacaras = [
     capacidade: "Até 15 pessoas",
     rating: 4.6,
     favorito: true,
-    imagem: "/placeholder.svg"
+    imagem: "/placeholder.svg",
+    descricao: "Sítio aconchegante com piscina aquecida"
   },
   {
     id: 3,
@@ -44,11 +50,48 @@ const mockChacaras = [
     capacidade: "Até 30 pessoas",
     rating: 4.9,
     favorito: false,
-    imagem: "/placeholder.svg"
+    imagem: "/placeholder.svg",
+    descricao: "Espaço amplo ideal para grandes eventos"
   }
 ];
 
 const DashboardVisitante = () => {
+  const { toast } = useToast();
+  const [chacaras, setChacaras] = useState(mockChacaras);
+  const [selectedProperty, setSelectedProperty] = useState<typeof mockChacaras[0] | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [searchFilters, setSearchFilters] = useState({
+    checkin: '',
+    checkout: '',
+    pessoas: '',
+    localizacao: ''
+  });
+
+  const handleFavorite = (propertyId: number) => {
+    setChacaras(prev => 
+      prev.map(chacara => 
+        chacara.id === propertyId 
+          ? { ...chacara, favorito: !chacara.favorito }
+          : chacara
+      )
+    );
+  };
+
+  const handleViewDetails = (property: typeof mockChacaras[0]) => {
+    setSelectedProperty(property);
+    setShowDetailsModal(true);
+  };
+
+  const handleSearch = () => {
+    toast({
+      title: "Busca realizada!",
+      description: `Buscando chácaras em ${searchFilters.localizacao || 'todas as regiões'}`,
+    });
+    console.log('Filtros de busca:', searchFilters);
+  };
+
+  const favoriteCount = chacaras.filter(c => c.favorito).length;
+
   return (
     <Layout>
       <div className="space-y-8 animate-fade-in">
@@ -84,7 +127,7 @@ const DashboardVisitante = () => {
           />
           <StatsCard
             title="Favoritos"
-            value="8"
+            value={favoriteCount.toString()}
             icon={Heart}
             bgColor="bg-red-50"
             iconColor="text-red-500"
@@ -104,25 +147,52 @@ const DashboardVisitante = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="checkin">Check-in</Label>
-              <Input type="date" id="checkin" />
+              <Input 
+                type="date" 
+                id="checkin" 
+                value={searchFilters.checkin}
+                onChange={(e) => setSearchFilters({...searchFilters, checkin: e.target.value})}
+              />
             </div>
             <div>
               <Label htmlFor="checkout">Check-out</Label>
-              <Input type="date" id="checkout" />
+              <Input 
+                type="date" 
+                id="checkout" 
+                value={searchFilters.checkout}
+                onChange={(e) => setSearchFilters({...searchFilters, checkout: e.target.value})}
+              />
             </div>
             <div>
               <Label htmlFor="pessoas">Número de pessoas</Label>
-              <Input type="number" id="pessoas" placeholder="Ex: 20" />
+              <Input 
+                type="number" 
+                id="pessoas" 
+                placeholder="Ex: 20" 
+                value={searchFilters.pessoas}
+                onChange={(e) => setSearchFilters({...searchFilters, pessoas: e.target.value})}
+              />
             </div>
             <div>
               <Label htmlFor="localizacao">Localização</Label>
-              <Input id="localizacao" placeholder="Cidade ou região" />
+              <Input 
+                id="localizacao" 
+                placeholder="Cidade ou região" 
+                value={searchFilters.localizacao}
+                onChange={(e) => setSearchFilters({...searchFilters, localizacao: e.target.value})}
+              />
             </div>
           </div>
-          <Button className="mt-4 bg-teal-600 hover:bg-teal-700 text-white">
-            <Search className="w-4 h-4 mr-2" />
-            Buscar Chácaras
-          </Button>
+          <div className="flex gap-3 mt-4">
+            <Button onClick={handleSearch} className="bg-teal-600 hover:bg-teal-700 text-white">
+              <Search className="w-4 h-4 mr-2" />
+              Buscar Chácaras
+            </Button>
+            <Button variant="outline">
+              <Filter className="w-4 h-4 mr-2" />
+              Filtros Avançados
+            </Button>
+          </div>
         </Card>
 
         {/* Available Properties */}
@@ -133,7 +203,7 @@ const DashboardVisitante = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockChacaras.map((chacara) => (
+            {chacaras.map((chacara) => (
               <Card key={chacara.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="h-48 bg-gray-200 relative">
                   <img 
@@ -145,8 +215,9 @@ const DashboardVisitante = () => {
                     size="sm"
                     variant={chacara.favorito ? "default" : "outline"}
                     className="absolute top-3 right-3"
+                    onClick={() => handleFavorite(chacara.id)}
                   >
-                    <Heart className={`w-4 h-4 ${chacara.favorito ? 'fill-current' : ''}`} />
+                    <Heart className={`w-4 h-4 ${chacara.favorito ? 'fill-current text-red-500' : ''}`} />
                   </Button>
                 </div>
                 <div className="p-4">
@@ -159,14 +230,17 @@ const DashboardVisitante = () => {
                     <Users className="w-4 h-4" />
                     <span className="text-sm">{chacara.capacidade}</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                       <span className="text-sm font-medium">{chacara.rating}</span>
                     </div>
                     <span className="font-bold text-teal-600">{chacara.preco}</span>
                   </div>
-                  <Button className="w-full mt-4 bg-teal-600 hover:bg-teal-700">
+                  <Button 
+                    className="w-full bg-teal-600 hover:bg-teal-700"
+                    onClick={() => handleViewDetails(chacara)}
+                  >
                     Ver Detalhes
                   </Button>
                 </div>
@@ -202,6 +276,13 @@ const DashboardVisitante = () => {
             </div>
           </div>
         </Card>
+
+        <PropertyDetailsModal 
+          property={selectedProperty}
+          isOpen={showDetailsModal}
+          onClose={() => setShowDetailsModal(false)}
+          onFavorite={handleFavorite}
+        />
       </div>
     </Layout>
   );

@@ -15,6 +15,7 @@ import Tarefas from "./pages/Tarefas";
 import Pagamentos from "./pages/Pagamentos";
 import Ajuda from "./pages/Ajuda";
 import Relatorios from "./pages/Relatorios";
+import Configuracoes from "./pages/Configuracoes";
 import DashboardVisitante from "./pages/DashboardVisitante";
 import DashboardProprietario from "./pages/DashboardProprietario";
 import DashboardAdmin from "./pages/DashboardAdmin";
@@ -44,7 +45,7 @@ const App = () => (
           <Route path="/ajuda" element={<Ajuda />} />
           <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/reservas" element={<Index />} />
-          <Route path="/configuracoes" element={<Index />} />
+          <Route path="/configuracoes" element={<Configuracoes />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

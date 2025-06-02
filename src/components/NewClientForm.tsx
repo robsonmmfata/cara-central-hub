@@ -9,9 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 interface NewClientFormProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave?: (clientData: any) => void;
 }
 
-export function NewClientForm({ isOpen, onClose }: NewClientFormProps) {
+export function NewClientForm({ isOpen, onClose, onSave }: NewClientFormProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     nome: '',
@@ -26,10 +27,16 @@ export function NewClientForm({ isOpen, onClose }: NewClientFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Novo cliente:', formData);
+    
+    if (onSave) {
+      onSave(formData);
+    }
+    
     toast({
       title: "Cliente adicionado!",
       description: `${formData.nome} foi adicionado com sucesso.`,
     });
+    
     onClose();
     setFormData({
       nome: '',

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, Users } from "lucide-react";
+import { Plus, Search, Filter, Users, Edit } from "lucide-react";
 import { useState } from "react";
 
 const mockClients = [
@@ -63,19 +63,33 @@ const Clientes = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [selectedClient, setSelectedClient] = useState<typeof mockClients[0] | null>(null);
+  const [clients, setClients] = useState(mockClients);
 
-  const filteredClients = mockClients.filter(client =>
+  const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.phone.includes(searchTerm)
   );
 
-  const totalClients = mockClients.length;
-  const vipClients = mockClients.filter(c => c.status === 'VIP').length;
-  const blockedClients = mockClients.filter(c => c.status === 'Bloqueado').length;
+  const totalClients = clients.length;
+  const vipClients = clients.filter(c => c.status === 'VIP').length;
+  const blockedClients = clients.filter(c => c.status === 'Bloqueado').length;
 
   const handleEditClient = (client: typeof mockClients[0]) => {
     setSelectedClient(client);
     setShowEditForm(true);
+  };
+
+  const handleAddClient = (clientData: any) => {
+    const newClient = {
+      id: (clients.length + 1).toString(),
+      name: clientData.nome,
+      phone: clientData.telefone,
+      email: clientData.email,
+      reservations: 0,
+      totalSpent: 0,
+      status: clientData.tipoCliente === 'vip' ? 'VIP' as const : 'Regular' as const
+    };
+    setClients([...clients, newClient]);
   };
 
   return (
@@ -165,18 +179,22 @@ const Clientes = () => {
           {filteredClients.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredClients.map((client) => (
-                <div key={client.id} className="relative">
-                  <ClientCard client={client} />
-                  <div className="absolute top-4 right-4">
+                <Card key={client.id} className="p-6 hover:shadow-lg transition-shadow relative">
+                  <div className="mb-4">
+                    <ClientCard client={client} />
+                  </div>
+                  <div className="flex justify-end pt-3 border-t">
                     <Button 
                       size="sm" 
                       variant="outline"
                       onClick={() => handleEditClient(client)}
+                      className="flex items-center gap-2"
                     >
+                      <Edit className="w-4 h-4" />
                       Editar
                     </Button>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           ) : (
@@ -191,7 +209,8 @@ const Clientes = () => {
         {/* Modals */}
         <NewClientForm 
           isOpen={showAddForm} 
-          onClose={() => setShowAddForm(false)} 
+          onClose={() => setShowAddForm(false)}
+          onSave={handleAddClient}
         />
         
         <EditClientForm 
