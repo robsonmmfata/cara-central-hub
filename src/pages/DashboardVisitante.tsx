@@ -58,6 +58,7 @@ const mockChacaras = [
 const DashboardVisitante = () => {
   const { toast } = useToast();
   const [chacaras, setChacaras] = useState(mockChacaras);
+  const [filteredChacaras, setFilteredChacaras] = useState(mockChacaras);
   const [selectedProperty, setSelectedProperty] = useState<typeof mockChacaras[0] | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [searchFilters, setSearchFilters] = useState({
@@ -75,6 +76,13 @@ const DashboardVisitante = () => {
           : chacara
       )
     );
+    setFilteredChacaras(prev => 
+      prev.map(chacara => 
+        chacara.id === propertyId 
+          ? { ...chacara, favorito: !chacara.favorito }
+          : chacara
+      )
+    );
   };
 
   const handleViewDetails = (property: typeof mockChacaras[0]) => {
@@ -83,11 +91,39 @@ const DashboardVisitante = () => {
   };
 
   const handleSearch = () => {
+    let filtered = chacaras;
+
+    // Filtrar por localização
+    if (searchFilters.localizacao) {
+      filtered = filtered.filter(chacara => 
+        chacara.localizacao.toLowerCase().includes(searchFilters.localizacao.toLowerCase())
+      );
+    }
+
+    // Filtrar por capacidade (pessoas)
+    if (searchFilters.pessoas) {
+      const pessoasNum = parseInt(searchFilters.pessoas);
+      filtered = filtered.filter(chacara => {
+        const capacidade = parseInt(chacara.capacidade.match(/\d+/)?.[0] || '0');
+        return capacidade >= pessoasNum;
+      });
+    }
+
+    setFilteredChacaras(filtered);
+    
     toast({
       title: "Busca realizada!",
-      description: `Buscando chácaras em ${searchFilters.localizacao || 'todas as regiões'}`,
+      description: `Encontradas ${filtered.length} chácaras que atendem aos critérios.`,
     });
     console.log('Filtros de busca:', searchFilters);
+    console.log('Resultados filtrados:', filtered);
+  };
+
+  const handleAdvancedFilters = () => {
+    toast({
+      title: "Filtros Avançados",
+      description: "Funcionalidade de filtros avançados em desenvolvimento.",
+    });
   };
 
   const favoriteCount = chacaras.filter(c => c.favorito).length;
@@ -113,7 +149,7 @@ const DashboardVisitante = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <StatsCard
             title="Chácaras Disponíveis"
-            value="47"
+            value={filteredChacaras.length.toString()}
             icon={MapPin}
             bgColor="bg-teal-50"
             iconColor="text-teal-500"
@@ -188,7 +224,7 @@ const DashboardVisitante = () => {
               <Search className="w-4 h-4 mr-2" />
               Buscar Chácaras
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleAdvancedFilters}>
               <Filter className="w-4 h-4 mr-2" />
               Filtros Avançados
             </Button>
@@ -198,12 +234,14 @@ const DashboardVisitante = () => {
         {/* Available Properties */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800">Chácaras Disponíveis</h2>
+            <h2 className="text-2xl font-bold text-gray-800">
+              Chácaras Disponíveis ({filteredChacaras.length})
+            </h2>
             <Button variant="outline">Ver todas</Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {chacaras.map((chacara) => (
+            {filteredChacaras.map((chacara) => (
               <Card key={chacara.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="h-48 bg-gray-200 relative">
                   <img 
@@ -247,6 +285,22 @@ const DashboardVisitante = () => {
               </Card>
             ))}
           </div>
+          
+          {filteredChacaras.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">Nenhuma chácara encontrada com os filtros selecionados.</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => {
+                  setSearchFilters({ checkin: '', checkout: '', pessoas: '', localizacao: '' });
+                  setFilteredChacaras(chacaras);
+                }}
+              >
+                Limpar Filtros
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Recent Activity */}

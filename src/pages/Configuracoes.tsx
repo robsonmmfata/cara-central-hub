@@ -6,12 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Camera, Save, User, Mail, Lock, MapPin, Phone, Shield, Bell } from "lucide-react";
-import { useState } from "react";
+import { Camera, Save, User, Mail, Lock, MapPin, Phone, Shield, Bell, Upload } from "lucide-react";
+import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const Configuracoes = () => {
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [userData, setUserData] = useState({
     nome: 'João Silva',
     email: 'joao@email.com',
@@ -23,7 +24,8 @@ const Configuracoes = () => {
     novaSenha: '',
     confirmarSenha: '',
     notificacoes: true,
-    emailMarketing: false
+    emailMarketing: false,
+    foto: '/placeholder.svg'
   });
 
   const handleSave = () => {
@@ -36,18 +38,59 @@ const Configuracoes = () => {
       return;
     }
 
+    // Simular salvamento dos dados
     console.log('Dados salvos:', userData);
+    
     toast({
       title: "Configurações salvas!",
       description: "Suas informações foram atualizadas com sucesso.",
     });
+
+    // Limpar campos de senha após salvar
+    setUserData(prev => ({
+      ...prev,
+      senha: '',
+      novaSenha: '',
+      confirmarSenha: ''
+    }));
   };
 
-  const handlePhotoChange = () => {
-    toast({
-      title: "Foto atualizada!",
-      description: "Sua foto de perfil foi alterada.",
-    });
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Verificar se é uma imagem
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Erro",
+          description: "Por favor, selecione apenas arquivos de imagem.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Verificar tamanho (máximo 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "Erro",
+          description: "A imagem deve ter no máximo 2MB.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Criar URL para preview da imagem
+      const imageUrl = URL.createObjectURL(file);
+      setUserData(prev => ({ ...prev, foto: imageUrl }));
+      
+      toast({
+        title: "Foto atualizada!",
+        description: "Sua foto de perfil foi alterada com sucesso.",
+      });
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -67,15 +110,26 @@ const Configuracoes = () => {
             </h2>
             <div className="flex flex-col items-center space-y-4">
               <Avatar className="w-32 h-32">
-                <AvatarImage src="/placeholder.svg" />
+                <AvatarImage src={userData.foto} />
                 <AvatarFallback className="text-2xl">JS</AvatarFallback>
               </Avatar>
-              <Button onClick={handlePhotoChange} variant="outline" className="w-full">
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="hidden"
+              />
+              
+              <Button onClick={triggerFileInput} variant="outline" className="w-full">
                 <Camera className="w-4 h-4 mr-2" />
                 Alterar Foto
               </Button>
+              
               <p className="text-xs text-gray-500 text-center">
-                Formatos aceitos: JPG, PNG. Tamanho máximo: 2MB
+                Formatos aceitos: JPG, PNG, GIF<br />
+                Tamanho máximo: 2MB
               </p>
             </div>
           </Card>
@@ -260,7 +314,7 @@ const Configuracoes = () => {
             {/* Save Button */}
             <div className="flex justify-end">
               <Button onClick={handleSave} className="bg-farm-blue-500 hover:bg-farm-blue-600 px-8">
-                <Save className="w-4 h-4 mr-2" />
+                <Save className="w-4 w-4 mr-2" />
                 Salvar Alterações
               </Button>
             </div>
