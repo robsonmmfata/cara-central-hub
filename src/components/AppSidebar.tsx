@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Calendar, Home, Users, CreditCard, CheckSquare, BarChart3, MapPin, Settings, TreePine, FileText, HelpCircle } from 'lucide-react';
+import { Calendar, Home, Users, CreditCard, CheckSquare, BarChart3, MapPin, Settings, TreePine, FileText, HelpCircle, Plus, Shield, UserPlus, DollarSign, Eye, LogOut } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -14,62 +14,59 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { useLocation, Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/button';
 
-const menuItems = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: Home,
-  },
-  {
-    title: "Clientes",
-    url: "/clientes",
-    icon: Users,
-  },
-  {
-    title: "Reservas",
-    url: "/reservas",
-    icon: Calendar,
-  },
-  {
-    title: "Check-in Digital",
-    url: "/checkin",
-    icon: CheckSquare,
-  },
-  {
-    title: "Pagamentos",
-    url: "/pagamentos",
-    icon: CreditCard,
-  },
-  {
-    title: "Tarefas",
-    url: "/tarefas",
-    icon: BarChart3,
-  },
-  {
-    title: "Localização",
-    url: "/localizacao",
-    icon: MapPin,
-  },
-  {
-    title: "Relatórios",
-    url: "/relatorios",
-    icon: FileText,
-  },
-  {
-    title: "Ajuda",
-    url: "/ajuda",
-    icon: HelpCircle,
-  },
-  {
-    title: "Configurações",
-    url: "/configuracoes",
-    icon: Settings,
-  },
+const adminMenuItems = [
+  { title: "Dashboard", url: "/dashboard-admin", icon: Home },
+  { title: "Usuários", url: "/admin/usuarios", icon: Users },
+  { title: "Propriedades", url: "/admin/propriedades", icon: TreePine },
+  { title: "Receitas", url: "/admin/receitas", icon: DollarSign },
+  { title: "Relatórios", url: "/admin/relatorios", icon: FileText },
+  { title: "Configurações", url: "/configuracoes", icon: Settings },
+];
+
+const proprietarioMenuItems = [
+  { title: "Dashboard", url: "/dashboard-proprietario", icon: Home },
+  { title: "Minhas Propriedades", url: "/proprietario/propriedades", icon: TreePine },
+  { title: "Reservas", url: "/proprietario/reservas", icon: Calendar },
+  { title: "Clientes", url: "/clientes", icon: Users },
+  { title: "Pagamentos", url: "/pagamentos", icon: CreditCard },
+  { title: "Relatórios", url: "/relatorios", icon: FileText },
+  { title: "Configurações", url: "/configuracoes", icon: Settings },
+];
+
+const visitanteMenuItems = [
+  { title: "Buscar Chácaras", url: "/dashboard-visitante", icon: MapPin },
+  { title: "Minhas Reservas", url: "/visitante/reservas", icon: Calendar },
+  { title: "Check-in Digital", url: "/checkin", icon: CheckSquare },
+  { title: "Ajuda", url: "/ajuda", icon: HelpCircle },
+  { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
+  const { user, logout } = useAuth();
+
+  const getMenuItems = () => {
+    switch (user?.type) {
+      case 'admin': return adminMenuItems;
+      case 'proprietario': return proprietarioMenuItems;
+      case 'visitante': return visitanteMenuItems;
+      default: return [];
+    }
+  };
+
+  const getUserTypeLabel = () => {
+    switch (user?.type) {
+      case 'admin': return 'Administrador';
+      case 'proprietario': return 'Proprietário';
+      case 'visitante': return 'Visitante';
+      default: return 'Usuário';
+    }
+  };
+
+  const menuItems = getMenuItems();
 
   return (
     <Sidebar className="border-r bg-gradient-to-b from-farm-blue-50 to-white">
@@ -80,7 +77,7 @@ export function AppSidebar() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-gray-900">Chácara+</h1>
-            <p className="text-sm text-gray-600">Sistema de Gestão</p>
+            <p className="text-sm text-gray-600">{getUserTypeLabel()}</p>
           </div>
         </div>
       </SidebarHeader>
@@ -115,9 +112,19 @@ export function AppSidebar() {
       </SidebarContent>
       
       <SidebarFooter className="p-4">
-        <div className="rounded-lg bg-gradient-to-r from-farm-orange-500 to-farm-orange-600 p-4 text-white">
-          <p className="text-sm font-medium">Versão 1.0</p>
-          <p className="text-xs opacity-90">Sistema Chácara+</p>
+        <div className="space-y-3">
+          <div className="rounded-lg bg-gradient-to-r from-farm-orange-500 to-farm-orange-600 p-4 text-white">
+            <p className="text-sm font-medium">{user?.name}</p>
+            <p className="text-xs opacity-90">{user?.email}</p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={logout}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair
+          </Button>
         </div>
       </SidebarFooter>
     </Sidebar>
