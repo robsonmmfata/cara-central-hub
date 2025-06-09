@@ -1,435 +1,245 @@
+
 import { Layout } from "@/components/Layout";
-import { StatsCard } from "@/components/StatsCard";
-import { PropertyDetailsModal } from "@/components/PropertyDetailsModal";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { 
-  Calendar, 
-  MapPin, 
   Search, 
+  MapPin, 
+  Users, 
+  Star, 
+  Calendar,
+  TreePine,
   Heart,
-  Star,
-  Users,
-  Clock,
   Filter
 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
 import { useAppData } from "@/context/AppDataContext";
 
-const mockChacaras = [
-  {
-    id: 1,
-    nome: "Chácara Vista Verde",
-    localizacao: "Atibaia, SP",
-    preco: "R$ 350/dia",
-    capacidade: "Até 20 pessoas",
-    rating: 4.8,
-    favorito: false,
-    imagem: "/placeholder.svg",
-    descricao: "Linda chácara com vista para as montanhas"
-  },
-  {
-    id: 2,
-    nome: "Sítio do Sol",
-    localizacao: "Ibiúna, SP",
-    preco: "R$ 280/dia",
-    capacidade: "Até 15 pessoas",
-    rating: 4.6,
-    favorito: true,
-    imagem: "/placeholder.svg",
-    descricao: "Sítio aconchegante com piscina aquecida"
-  },
-  {
-    id: 3,
-    nome: "Chácara Recanto Feliz",
-    localizacao: "Mairiporã, SP",
-    preco: "R$ 420/dia",
-    capacidade: "Até 30 pessoas",
-    rating: 4.9,
-    favorito: false,
-    imagem: "/placeholder.svg",
-    descricao: "Espaço amplo ideal para grandes eventos"
-  }
-];
-
 const DashboardVisitante = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const { properties, addTransaction } = useAppData();
+  const { getApprovedProperties } = useAppData();
   
-  // Filtrar apenas propriedades aprovadas para visitantes
-  const availableProperties = properties.filter(p => p.status === 'aprovada');
-  
-  const [chacaras, setChacaras] = useState(availableProperties.map(p => ({
-    id: p.id,
-    nome: p.nome,
-    localizacao: p.localizacao,
-    preco: `R$ ${p.preco}/dia`,
-    capacidade: `Até ${p.capacidade} pessoas`,
-    rating: p.rating || 4.5,
-    favorito: false,
-    imagem: p.imagem || "/placeholder.svg",
-    descricao: p.descricao || "Propriedade disponível para reserva"
-  })));
-  
-  const [filteredChacaras, setFilteredChacaras] = useState(chacaras);
-  const [selectedProperty, setSelectedProperty] = useState<typeof chacaras[0] | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [searchFilters, setSearchFilters] = useState({
-    checkin: '',
-    checkout: '',
-    pessoas: '',
-    localizacao: ''
+  const [searchTerm, setSearchTerm] = useState('');
+  const [priceFilter, setPriceFilter] = useState<string>('');
+  const [capacityFilter, setCapacityFilter] = useState<string>('');
+
+  // Usar apenas propriedades aprovadas do contexto global
+  const approvedProperties = getApprovedProperties();
+
+  const filteredProperties = approvedProperties.filter(property => {
+    const matchesSearch = property.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         property.localizacao.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesPrice = !priceFilter || 
+      (priceFilter === 'low' && property.preco <= 200) ||
+      (priceFilter === 'medium' && property.preco > 200 && property.preco <= 400) ||
+      (priceFilter === 'high' && property.preco > 400);
+    
+    const matchesCapacity = !capacityFilter ||
+      (capacityFilter === 'small' && property.capacidade <= 15) ||
+      (capacityFilter === 'medium' && property.capacidade > 15 && property.capacidade <= 25) ||
+      (capacityFilter === 'large' && property.capacidade > 25);
+
+    return matchesSearch && matchesPrice && matchesCapacity;
   });
 
-  // Atualizar chácaras quando propriedades mudarem
-  useState(() => {
-    const updatedChacaras = availableProperties.map(p => ({
-      id: p.id,
-      nome: p.nome,
-      localizacao: p.localizacao,
-      preco: `R$ ${p.preco}/dia`,
-      capacidade: `Até ${p.capacidade} pessoas`,
-      rating: p.rating || 4.5,
-      favorito: chacaras.find(c => c.id === p.id)?.favorito || false,
-      imagem: p.imagem || "/placeholder.svg",
-      descricao: p.descricao || "Propriedade disponível para reserva"
-    }));
-    setChacaras(updatedChacaras);
-    setFilteredChacaras(updatedChacaras);
-  });
-
-  const handleFavorite = (propertyId: number) => {
-    const updateChacaras = (prev: typeof chacaras) => 
-      prev.map(chacara => 
-        chacara.id === propertyId 
-          ? { ...chacara, favorito: !chacara.favorito }
-          : chacara
-      );
-    
-    setChacaras(updateChacaras);
-    setFilteredChacaras(updateChacaras);
-    
-    const property = chacaras.find(c => c.id === propertyId);
+  const handleReservar = (property: typeof approvedProperties[0]) => {
     toast({
-      title: property?.favorito ? "Removido dos favoritos" : "Adicionado aos favoritos",
-      description: property?.nome,
+      title: "Redirecionando para reserva",
+      description: `Preparando reserva para ${property.nome}`,
+    });
+    navigate('/reserva-chacara', { state: { property } });
+  };
+
+  const handleViewDetails = (property: typeof approvedProperties[0]) => {
+    toast({
+      title: "Detalhes da Propriedade",
+      description: `${property.nome} - Capacidade: ${property.capacidade} pessoas`,
     });
   };
-
-  const handleViewDetails = (property: typeof chacaras[0]) => {
-    setSelectedProperty(property);
-    setShowDetailsModal(true);
-  };
-
-  const handleSearch = () => {
-    let filtered = chacaras;
-
-    // Filtrar por localização
-    if (searchFilters.localizacao.trim()) {
-      filtered = filtered.filter(chacara => 
-        chacara.localizacao.toLowerCase().includes(searchFilters.localizacao.toLowerCase()) ||
-        chacara.nome.toLowerCase().includes(searchFilters.localizacao.toLowerCase())
-      );
-    }
-
-    // Filtrar por capacidade (pessoas)
-    if (searchFilters.pessoas.trim()) {
-      const pessoasNum = parseInt(searchFilters.pessoas);
-      if (!isNaN(pessoasNum)) {
-        filtered = filtered.filter(chacara => {
-          const capacidade = parseInt(chacara.capacidade.match(/\d+/)?.[0] || '0');
-          return capacidade >= pessoasNum;
-        });
-      }
-    }
-
-    setFilteredChacaras(filtered);
-    
-    toast({
-      title: "Busca realizada!",
-      description: `Encontradas ${filtered.length} chácaras que atendem aos critérios.`,
-    });
-    console.log('Filtros de busca aplicados:', searchFilters);
-    console.log('Resultados da busca:', filtered);
-  };
-
-  const handleAdvancedFilters = () => {
-    // Aplicar filtros mais específicos
-    let filtered = chacaras;
-
-    // Se há data de check-in e check-out, simular disponibilidade
-    if (searchFilters.checkin && searchFilters.checkout) {
-      const checkinDate = new Date(searchFilters.checkin);
-      const checkoutDate = new Date(searchFilters.checkout);
-      
-      if (checkoutDate <= checkinDate) {
-        toast({
-          title: "Erro nas datas",
-          description: "A data de check-out deve ser posterior ao check-in.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Simular que todas as chácaras estão disponíveis para as datas selecionadas
-      filtered = chacaras.filter(chacara => {
-        // Aqui você faria uma verificação real de disponibilidade
-        return true; // Por enquanto, todas estão disponíveis
-      });
-    }
-
-    // Aplicar outros filtros já existentes
-    if (searchFilters.localizacao.trim()) {
-      filtered = filtered.filter(chacara => 
-        chacara.localizacao.toLowerCase().includes(searchFilters.localizacao.toLowerCase()) ||
-        chacara.nome.toLowerCase().includes(searchFilters.localizacao.toLowerCase())
-      );
-    }
-
-    if (searchFilters.pessoas.trim()) {
-      const pessoasNum = parseInt(searchFilters.pessoas);
-      if (!isNaN(pessoasNum)) {
-        filtered = filtered.filter(chacara => {
-          const capacidade = parseInt(chacara.capacidade.match(/\d+/)?.[0] || '0');
-          return capacidade >= pessoasNum;
-        });
-      }
-    }
-
-    setFilteredChacaras(filtered);
-    
-    toast({
-      title: "Filtros avançados aplicados!",
-      description: `${filtered.length} chácaras encontradas com os critérios selecionados.`,
-    });
-  };
-
-  const clearFilters = () => {
-    setSearchFilters({ checkin: '', checkout: '', pessoas: '', localizacao: '' });
-    setFilteredChacaras(chacaras);
-    toast({
-      title: "Filtros limpos",
-      description: "Mostrando todas as chácaras disponíveis.",
-    });
-  };
-
-  const favoriteCount = chacaras.filter(c => c.favorito).length;
 
   return (
     <Layout>
       <div className="space-y-8 animate-fade-in">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-2xl p-8 text-white shadow-lg">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Encontre sua Chácara Ideal</h1>
-              <p className="text-teal-100 text-lg">Descubra os melhores locais para suas festividades</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+              <TreePine className="h-8 w-8 text-teal-500" />
+              Chácaras Disponíveis
+            </h1>
+            <p className="text-gray-600 mt-1">Encontre a chácara perfeita para seu evento</p>
+          </div>
+          <Button 
+            onClick={() => navigate('/visitante/reservas')}
+            className="bg-teal-500 hover:bg-teal-600"
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Minhas Reservas
+          </Button>
+        </div>
+
+        {/* Search and Filters */}
+        <Card className="p-6">
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Buscar por nome da chácara ou localização..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            <div className="text-right">
-              <p className="text-teal-200 text-sm">Bem-vindo</p>
-              <p className="text-xl font-medium">Visitante</p>
+            
+            <div className="flex gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-500" />
+                <span className="text-sm text-gray-600">Filtros:</span>
+              </div>
+              
+              <select
+                value={priceFilter}
+                onChange={(e) => setPriceFilter(e.target.value)}
+                className="px-3 py-1 border rounded-md text-sm"
+              >
+                <option value="">Todos os preços</option>
+                <option value="low">Até R$ 200</option>
+                <option value="medium">R$ 200 - R$ 400</option>
+                <option value="high">Acima de R$ 400</option>
+              </select>
+              
+              <select
+                value={capacityFilter}
+                onChange={(e) => setCapacityFilter(e.target.value)}
+                className="px-3 py-1 border rounded-md text-sm"
+              >
+                <option value="">Todas as capacidades</option>
+                <option value="small">Até 15 pessoas</option>
+                <option value="medium">16 - 25 pessoas</option>
+                <option value="large">Mais de 25 pessoas</option>
+              </select>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatsCard
-            title="Chácaras Disponíveis"
-            value={filteredChacaras.length.toString()}
-            icon={MapPin}
-            bgColor="bg-teal-50"
-            iconColor="text-teal-500"
-          />
-          <StatsCard
-            title="Minhas Reservas"
-            value="3"
-            icon={Calendar}
-            bgColor="bg-blue-50"
-            iconColor="text-blue-500"
-          />
-          <StatsCard
-            title="Favoritos"
-            value={favoriteCount.toString()}
-            icon={Heart}
-            bgColor="bg-red-50"
-            iconColor="text-red-500"
-          />
-          <StatsCard
-            title="Avaliações Feitas"
-            value="12"
-            icon={Star}
-            bgColor="bg-yellow-50"
-            iconColor="text-yellow-500"
-          />
+          <Card className="p-6 text-center">
+            <TreePine className="h-8 w-8 text-teal-500 mx-auto mb-2" />
+            <p className="text-3xl font-bold text-teal-600">{approvedProperties.length}</p>
+            <p className="text-sm text-gray-600">Chácaras Disponíveis</p>
+          </Card>
+          <Card className="p-6 text-center">
+            <MapPin className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+            <p className="text-3xl font-bold text-blue-600">{new Set(approvedProperties.map(p => p.localizacao.split(',')[1]?.trim())).size}</p>
+            <p className="text-sm text-gray-600">Cidades</p>
+          </Card>
+          <Card className="p-6 text-center">
+            <Users className="h-8 w-8 text-green-500 mx-auto mb-2" />
+            <p className="text-3xl font-bold text-green-600">{Math.max(...approvedProperties.map(p => p.capacidade))}</p>
+            <p className="text-sm text-gray-600">Maior Capacidade</p>
+          </Card>
+          <Card className="p-6 text-center">
+            <Star className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
+            <p className="text-3xl font-bold text-yellow-600">R$ {Math.min(...approvedProperties.map(p => p.preco))}</p>
+            <p className="text-sm text-gray-600">Menor Preço</p>
+          </Card>
         </div>
 
-        {/* Search Filters */}
-        <Card className="p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Filtros de Busca</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="checkin">Check-in</Label>
-              <Input 
-                type="date" 
-                id="checkin" 
-                value={searchFilters.checkin}
-                onChange={(e) => setSearchFilters({...searchFilters, checkin: e.target.value})}
-                min={new Date().toISOString().split('T')[0]}
-              />
-            </div>
-            <div>
-              <Label htmlFor="checkout">Check-out</Label>
-              <Input 
-                type="date" 
-                id="checkout" 
-                value={searchFilters.checkout}
-                onChange={(e) => setSearchFilters({...searchFilters, checkout: e.target.value})}
-                min={searchFilters.checkin || new Date().toISOString().split('T')[0]}
-              />
-            </div>
-            <div>
-              <Label htmlFor="pessoas">Número de pessoas</Label>
-              <Input 
-                type="number" 
-                id="pessoas" 
-                placeholder="Ex: 20" 
-                min="1"
-                value={searchFilters.pessoas}
-                onChange={(e) => setSearchFilters({...searchFilters, pessoas: e.target.value})}
-              />
-            </div>
-            <div>
-              <Label htmlFor="localizacao">Localização</Label>
-              <Input 
-                id="localizacao" 
-                placeholder="Cidade ou região" 
-                value={searchFilters.localizacao}
-                onChange={(e) => setSearchFilters({...searchFilters, localizacao: e.target.value})}
-              />
-            </div>
-          </div>
-          <div className="flex gap-3 mt-4">
-            <Button onClick={handleSearch} className="bg-teal-600 hover:bg-teal-700 text-white">
-              <Search className="w-4 h-4 mr-2" />
-              Buscar Chácaras
-            </Button>
-            <Button variant="outline" onClick={handleAdvancedFilters}>
-              <Filter className="w-4 h-4 mr-2" />
-              Filtros Avançados
-            </Button>
-            <Button variant="outline" onClick={clearFilters}>
-              Limpar Filtros
-            </Button>
-          </div>
-        </Card>
-
-        {/* Available Properties */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800">
-              Chácaras Disponíveis ({filteredChacaras.length})
-            </h2>
-            <Button variant="outline" onClick={() => setFilteredChacaras(chacaras)}>Ver todas</Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredChacaras.map((chacara) => (
-              <Card key={chacara.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="h-48 bg-gray-200 relative">
-                  <img 
-                    src={chacara.imagem} 
-                    alt={chacara.nome}
-                    className="w-full h-full object-cover"
-                  />
-                  <Button
-                    size="sm"
-                    variant={chacara.favorito ? "default" : "outline"}
-                    className="absolute top-3 right-3"
-                    onClick={() => handleFavorite(chacara.id)}
-                  >
-                    <Heart className={`w-4 h-4 ${chacara.favorito ? 'fill-current text-red-500' : ''}`} />
-                  </Button>
+        {/* Properties Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProperties.map((property) => (
+            <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="relative">
+                <img 
+                  src={property.imagem || "/placeholder.svg"} 
+                  alt={property.nome}
+                  className="w-full h-48 object-cover"
+                />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+                >
+                  <Heart className="w-4 h-4" />
+                </Button>
+                {property.rating && (
+                  <Badge className="absolute top-2 left-2 bg-yellow-500 text-white">
+                    <Star className="w-3 h-3 mr-1" />
+                    {property.rating}
+                  </Badge>
+                )}
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{property.nome}</h3>
+                  <p className="text-gray-600 text-sm">{property.descricao}</p>
                 </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-lg mb-2">{chacara.nome}</h3>
-                  <div className="flex items-center gap-2 text-gray-600 mb-2">
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
                     <MapPin className="w-4 h-4" />
-                    <span className="text-sm">{chacara.localizacao}</span>
+                    <span>{property.localizacao}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600 mb-2">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Users className="w-4 h-4" />
-                    <span className="text-sm">{chacara.capacidade}</span>
+                    <span>Até {property.capacidade} pessoas</span>
                   </div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">{chacara.rating}</span>
-                    </div>
-                    <span className="font-bold text-teal-600">{chacara.preco}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-2xl font-bold text-teal-600">R$ {property.preco}</p>
+                    <p className="text-sm text-gray-500">por dia</p>
                   </div>
+                  <Badge className="bg-green-100 text-green-800">
+                    Disponível
+                  </Badge>
+                </div>
+
+                <div className="flex gap-2">
                   <Button 
-                    className="w-full bg-teal-600 hover:bg-teal-700"
-                    onClick={() => handleViewDetails(chacara)}
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => handleViewDetails(property)}
                   >
                     Ver Detalhes
                   </Button>
+                  <Button 
+                    className="flex-1 bg-teal-500 hover:bg-teal-600"
+                    onClick={() => handleReservar(property)}
+                  >
+                    Reservar
+                  </Button>
                 </div>
-              </Card>
-            ))}
-          </div>
-          
-          {filteredChacaras.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">Nenhuma chácara encontrada com os filtros selecionados.</p>
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={clearFilters}
-              >
-                Limpar Filtros
-              </Button>
-            </div>
-          )}
+              </div>
+            </Card>
+          ))}
         </div>
 
-        {/* Recent Activity */}
-        <Card className="p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">Atividade Recente</h3>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-              <Clock className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="font-medium">Reserva confirmada</p>
-                <p className="text-sm text-gray-600">Chácara Vista Verde - 15/12/2024</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-              <Heart className="w-5 h-5 text-red-500" />
-              <div>
-                <p className="font-medium">Adicionado aos favoritos</p>
-                <p className="text-sm text-gray-600">Sítio do Sol</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-              <Star className="w-5 h-5 text-yellow-500" />
-              <div>
-                <p className="font-medium">Avaliação enviada</p>
-                <p className="text-sm text-gray-600">Chácara Recanto Feliz - 5 estrelas</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <PropertyDetailsModal 
-          property={selectedProperty}
-          isOpen={showDetailsModal}
-          onClose={() => setShowDetailsModal(false)}
-          onFavorite={handleFavorite}
-        />
+        {filteredProperties.length === 0 && (
+          <Card className="p-12 text-center">
+            <TreePine className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma chácara encontrada</h3>
+            <p className="text-gray-600 mb-4">Tente ajustar os filtros de busca</p>
+            <Button 
+              onClick={() => {
+                setSearchTerm('');
+                setPriceFilter('');
+                setCapacityFilter('');
+              }}
+              variant="outline"
+            >
+              Limpar Filtros
+            </Button>
+          </Card>
+        )}
       </div>
     </Layout>
   );
