@@ -271,26 +271,4 @@ export function PaymentsManager() {
       )}
     </div>
   );
-
-  function getStatusColor(status: string) {
-    switch (status) {
-      case 'pago': return 'bg-green-100 text-green-800';
-      case 'pendente': return 'bg-yellow-100 text-yellow-800';
-      case 'atrasado': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  }
-
-  function getStatusIcon(status: string) {
-    switch (status) {
-      case 'pago': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'pendente': return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'atrasado': return <Clock className="h-4 w-4 text-red-500" />;
-      default: return null;
-    }
-  }
-
-  const totalReceitas = payments.filter(p => p.status === 'pago').reduce((sum, p) => sum + p.amount, 0);
-  const totalPendente = payments.filter(p => p.status === 'pendente').reduce((sum, p) => sum + p.amount, 0);
-  const totalAtrasado = payments.filter(p => p.status === 'atrasado').reduce((sum, p) => sum + p.amount, 0);
 }
