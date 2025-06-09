@@ -1,4 +1,3 @@
-
 import { Layout } from "@/components/Layout";
 import { StatsCard } from "@/components/StatsCard";
 import { Button } from "@/components/ui/button";
@@ -18,14 +17,16 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useReservations } from "@/context/ReservationContext";
+import { useAuth } from "@/context/AuthContext";
 
 const DashboardProprietario = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const { reservations, payments } = useReservations();
 
-  // Filtrar dados do proprietário (simulando que tem acesso a todas as reservas de suas propriedades)
-  const proprietarioReservas = reservations.slice(0, 5); // Limitando para não sobrecarregar
+  // Filtrar reservas das propriedades do proprietário
+  const proprietarioReservas = reservations.filter(r => r.userId === user?.id || r.userId === '2'); // Incluindo reservas do proprietário
   const proprietarioReceitas = payments.filter(p => p.status === 'pago').reduce((sum, p) => sum + p.amount, 0);
 
   const getStatusColor = (status: string) => {
@@ -163,7 +164,13 @@ const DashboardProprietario = () => {
               </div>
               <Button 
                 className="bg-green-500 hover:bg-green-600"
-                onClick={handleNewProperty}
+                onClick={() => {
+                  navigate('/proprietario/propriedades');
+                  toast({
+                    title: "Nova Propriedade",
+                    description: "Redirecionando para cadastro de propriedades...",
+                  });
+                }}
               >
                 <Plus className="w-4 h-4" />
               </Button>
@@ -178,7 +185,13 @@ const DashboardProprietario = () => {
               </div>
               <Button 
                 className="bg-blue-500 hover:bg-blue-600"
-                onClick={handlePendingReservations}
+                onClick={() => {
+                  navigate('/proprietario/reservas');
+                  toast({
+                    title: "Reservas Pendentes",
+                    description: "Visualizando reservas que aguardam confirmação...",
+                  });
+                }}
               >
                 <Clock className="w-4 h-4" />
               </Button>
@@ -193,7 +206,13 @@ const DashboardProprietario = () => {
               </div>
               <Button 
                 className="bg-orange-500 hover:bg-orange-600"
-                onClick={handleReports}
+                onClick={() => {
+                  navigate('/relatorios');
+                  toast({
+                    title: "Relatórios",
+                    description: "Abrindo página de relatórios...",
+                  });
+                }}
               >
                 <TrendingUp className="w-4 h-4" />
               </Button>
@@ -201,13 +220,19 @@ const DashboardProprietario = () => {
           </Card>
         </div>
 
-        {/* Recent Reservations */}
+        {/* Recent Reservations - Mostrando TODAS as reservas incluindo de visitantes */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800">Reservas Recentes</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Todas as Reservas</h2>
             <Button 
               variant="outline"
-              onClick={handleViewAllReservations}
+              onClick={() => {
+                navigate('/proprietario/reservas');
+                toast({
+                  title: "Carregando todas as reservas",
+                  description: "Redirecionando para a página de reservas...",
+                });
+              }}
             >
               Ver todas
             </Button>
@@ -254,7 +279,13 @@ const DashboardProprietario = () => {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => handleViewReservation(reserva)}
+                          onClick={() => {
+                            toast({
+                              title: "Detalhes da Reserva",
+                              description: `${reserva.clientName} - ${reserva.propertyName} - R$ ${reserva.totalAmount.toLocaleString()}`,
+                            });
+                            console.log('Visualizando reserva:', reserva);
+                          }}
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           Ver

@@ -79,7 +79,7 @@ export function ReportsModal({ isOpen, onClose, onReportGenerated }: ReportsModa
   };
 
   const generatePDF = (reportType: string, data: any) => {
-    // Criar conteúdo HTML para o PDF
+    // Criar conteúdo HTML mais elaborado para o PDF
     let htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -87,43 +87,173 @@ export function ReportsModal({ isOpen, onClose, onReportGenerated }: ReportsModa
         <meta charset="utf-8">
         <title>Relatório ${reportType.toUpperCase()}</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .summary { background: #f5f5f5; padding: 15px; margin-bottom: 20px; }
-          .details { margin-top: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #f2f2f2; }
-          .logo { color: #2563eb; font-size: 24px; font-weight: bold; }
+          body { 
+            font-family: 'Arial', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #f8f9fa;
+          }
+          .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+          }
+          .header { 
+            text-align: center; 
+            margin-bottom: 40px; 
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+          }
+          .logo { 
+            color: #2563eb; 
+            font-size: 28px; 
+            font-weight: bold; 
+            margin-bottom: 10px;
+          }
+          .report-title {
+            color: #1f2937;
+            font-size: 24px;
+            margin: 10px 0;
+          }
+          .summary { 
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); 
+            padding: 25px; 
+            margin-bottom: 30px; 
+            border-radius: 10px;
+            border-left: 5px solid #2563eb;
+          }
+          .summary h2 {
+            color: #1f2937;
+            margin-bottom: 20px;
+            font-size: 20px;
+          }
+          .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+          }
+          .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          }
+          .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2563eb;
+          }
+          .stat-label {
+            color: #6b7280;
+            font-size: 14px;
+            margin-top: 5px;
+          }
+          .details { 
+            margin-top: 30px; 
+          }
+          .details h2 {
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+          }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 15px; 
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          }
+          th, td { 
+            border: 1px solid #e5e7eb; 
+            padding: 12px 15px; 
+            text-align: left; 
+          }
+          th { 
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+          }
+          tr:nth-child(even) { 
+            background-color: #f8fafc; 
+          }
+          tr:hover {
+            background-color: #e0f2fe;
+          }
+          .footer {
+            margin-top: 40px;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 12px;
+          }
+          .date-info {
+            background: #dbeafe;
+            padding: 10px 15px;
+            border-radius: 6px;
+            color: #1e40af;
+            margin-bottom: 20px;
+          }
+          @media print {
+            body { background: white; }
+            .container { box-shadow: none; }
+          }
         </style>
       </head>
       <body>
-        <div class="header">
-          <div class="logo">🏡 Sistema de Chácaras</div>
-          <h1>RELATÓRIO ${reportType.toUpperCase()}</h1>
-          <p>Período: ${dateRange.start || 'Início'} a ${dateRange.end || 'Hoje'}</p>
-          <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
-        </div>
+        <div class="container">
+          <div class="header">
+            <div class="logo">🏡 Sistema de Gestão de Chácaras</div>
+            <h1 class="report-title">RELATÓRIO ${reportType.toUpperCase()}</h1>
+            <div class="date-info">
+              <strong>Período:</strong> ${dateRange.start || 'Início'} a ${dateRange.end || 'Hoje'} | 
+              <strong>Gerado em:</strong> ${new Date().toLocaleString('pt-BR')}
+            </div>
+          </div>
     `;
     
     switch (reportType) {
       case 'clientes':
         htmlContent += `
           <div class="summary">
-            <h2>RESUMO EXECUTIVO</h2>
-            <p><strong>Total de Clientes:</strong> ${data.total}</p>
-            <p><strong>Novos Clientes:</strong> ${data.novos}</p>
-            <p><strong>Clientes VIP:</strong> ${data.vip}</p>
-            <p><strong>Clientes Regulares:</strong> ${data.regulares}</p>
-            <p><strong>Clientes Bloqueados:</strong> ${data.bloqueados}</p>
+            <h2>📊 RESUMO EXECUTIVO - CLIENTES</h2>
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="stat-value">${data.total}</div>
+                <div class="stat-label">Total de Clientes</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">${data.novos}</div>
+                <div class="stat-label">Novos Clientes</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">${data.vip}</div>
+                <div class="stat-label">Clientes VIP</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">${data.regulares}</div>
+                <div class="stat-label">Clientes Regulares</div>
+              </div>
+            </div>
           </div>
           <div class="details">
-            <h2>DETALHES DOS CLIENTES</h2>
+            <h2>👥 DETALHES DOS CLIENTES</h2>
             <table>
               <tr><th>Nome</th><th>Tipo</th><th>Data Cadastro</th><th>Nº Reservas</th></tr>
         `;
         data.detalhes.forEach((cliente: any) => {
-          htmlContent += `<tr><td>${cliente.nome}</td><td>${cliente.tipo}</td><td>${cliente.cadastro}</td><td>${cliente.reservas}</td></tr>`;
+          htmlContent += `<tr><td>${cliente.nome}</td><td><strong>${cliente.tipo}</strong></td><td>${cliente.cadastro}</td><td>${cliente.reservas}</td></tr>`;
         });
         htmlContent += `</table></div>`;
         break;
@@ -131,20 +261,33 @@ export function ReportsModal({ isOpen, onClose, onReportGenerated }: ReportsModa
       case 'reservas':
         htmlContent += `
           <div class="summary">
-            <h2>RESUMO EXECUTIVO</h2>
-            <p><strong>Total de Reservas:</strong> ${data.total}</p>
-            <p><strong>Reservas Pendentes:</strong> ${data.pendentes}</p>
-            <p><strong>Reservas Confirmadas:</strong> ${data.confirmadas}</p>
-            <p><strong>Reservas Canceladas:</strong> ${data.canceladas}</p>
-            <p><strong>Receita Total:</strong> R$ ${data.receita.toLocaleString()}</p>
+            <h2>📅 RESUMO EXECUTIVO - RESERVAS</h2>
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="stat-value">${data.total}</div>
+                <div class="stat-label">Total de Reservas</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">${data.confirmadas}</div>
+                <div class="stat-label">Confirmadas</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">${data.pendentes}</div>
+                <div class="stat-label">Pendentes</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">R$ ${data.receita.toLocaleString()}</div>
+                <div class="stat-label">Receita Total</div>
+              </div>
+            </div>
           </div>
           <div class="details">
-            <h2>DETALHES DAS RESERVAS</h2>
+            <h2>🏡 DETALHES DAS RESERVAS</h2>
             <table>
               <tr><th>Cliente</th><th>Chácara</th><th>Data</th><th>Valor</th><th>Status</th></tr>
         `;
         data.detalhes.forEach((reserva: any) => {
-          htmlContent += `<tr><td>${reserva.cliente}</td><td>${reserva.chacara}</td><td>${reserva.data}</td><td>R$ ${reserva.valor.toLocaleString()}</td><td>${reserva.status}</td></tr>`;
+          htmlContent += `<tr><td>${reserva.cliente}</td><td>${reserva.chacara}</td><td>${reserva.data}</td><td><strong>R$ ${reserva.valor.toLocaleString()}</strong></td><td>${reserva.status}</td></tr>`;
         });
         htmlContent += `</table></div>`;
         break;
@@ -152,20 +295,33 @@ export function ReportsModal({ isOpen, onClose, onReportGenerated }: ReportsModa
       case 'financeiro':
         htmlContent += `
           <div class="summary">
-            <h2>RESUMO FINANCEIRO</h2>
-            <p><strong>Receita Total:</strong> R$ ${data.receita.toLocaleString()}</p>
-            <p><strong>Despesas Totais:</strong> R$ ${data.despesas.toLocaleString()}</p>
-            <p><strong>Lucro Líquido:</strong> R$ ${data.lucro.toLocaleString()}</p>
-            <p><strong>Pagamentos Recebidos:</strong> ${data.pagamentosRecebidos}</p>
-            <p><strong>Pagamentos Pendentes:</strong> ${data.pagamentosPendentes}</p>
+            <h2>💰 RESUMO FINANCEIRO</h2>
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="stat-value">R$ ${data.receita.toLocaleString()}</div>
+                <div class="stat-label">Receita Total</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">R$ ${data.despesas.toLocaleString()}</div>
+                <div class="stat-label">Despesas Totais</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">R$ ${data.lucro.toLocaleString()}</div>
+                <div class="stat-label">Lucro Líquido</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">${data.pagamentosRecebidos}</div>
+                <div class="stat-label">Pagamentos Recebidos</div>
+              </div>
+            </div>
           </div>
           <div class="details">
-            <h2>DETALHES FINANCEIROS</h2>
+            <h2>💳 DETALHES FINANCEIROS</h2>
             <table>
               <tr><th>Tipo</th><th>Descrição</th><th>Valor</th></tr>
         `;
         data.detalhes.forEach((item: any) => {
-          htmlContent += `<tr><td>${item.tipo}</td><td>${item.descricao}</td><td>R$ ${item.valor.toLocaleString()}</td></tr>`;
+          htmlContent += `<tr><td><strong>${item.tipo}</strong></td><td>${item.descricao}</td><td>R$ ${item.valor.toLocaleString()}</td></tr>`;
         });
         htmlContent += `</table></div>`;
         break;
@@ -173,25 +329,47 @@ export function ReportsModal({ isOpen, onClose, onReportGenerated }: ReportsModa
       case 'ocupacao':
         htmlContent += `
           <div class="summary">
-            <h2>RESUMO DE OCUPAÇÃO</h2>
-            <p><strong>Taxa de Ocupação:</strong> ${data.taxaOcupacao}%</p>
-            <p><strong>Chácaras Disponíveis:</strong> ${data.chacarasDisponiveis}</p>
-            <p><strong>Chácaras Ocupadas:</strong> ${data.chacarasOcupadas}</p>
-            <p><strong>Total de Chácaras:</strong> ${data.totalChacaras}</p>
+            <h2>📈 RESUMO DE OCUPAÇÃO</h2>
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="stat-value">${data.taxaOcupacao}%</div>
+                <div class="stat-label">Taxa de Ocupação</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">${data.chacarasOcupadas}</div>
+                <div class="stat-label">Chácaras Ocupadas</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">${data.chacarasDisponiveis}</div>
+                <div class="stat-label">Chácaras Disponíveis</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">${data.totalChacaras}</div>
+                <div class="stat-label">Total de Chácaras</div>
+              </div>
+            </div>
           </div>
           <div class="details">
-            <h2>DETALHES POR CHÁCARA</h2>
+            <h2>🏘️ DETALHES POR CHÁCARA</h2>
             <table>
               <tr><th>Chácara</th><th>Taxa Ocupação</th><th>Dias Ocupados</th></tr>
         `;
         data.detalhes.forEach((chacara: any) => {
-          htmlContent += `<tr><td>${chacara.chacara}</td><td>${chacara.ocupacao}%</td><td>${chacara.dias}</td></tr>`;
+          htmlContent += `<tr><td><strong>${chacara.chacara}</strong></td><td>${chacara.ocupacao}%</td><td>${chacara.dias} dias</td></tr>`;
         });
         htmlContent += `</table></div>`;
         break;
     }
     
-    htmlContent += `</body></html>`;
+    htmlContent += `
+          <div class="footer">
+            <p><strong>Sistema de Gestão de Chácaras</strong> - Relatório gerado automaticamente em ${new Date().toLocaleString('pt-BR')}</p>
+            <p>Este documento contém informações confidenciais e é destinado exclusivamente ao uso interno.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
     
     // Criar blob e fazer download
     const blob = new Blob([htmlContent], { type: 'text/html' });
@@ -226,13 +404,13 @@ export function ReportsModal({ isOpen, onClose, onReportGenerated }: ReportsModa
         type: selectedReport,
         dateRange,
         generatedAt: new Date(),
-        filename: `relatorio_${selectedReport}_${new Date().toISOString().split('T')[0]}.pdf`
+        filename: `relatorio_${selectedReport}_${new Date().toISOString().split('T')[0]}.html`
       });
     }
     
     toast({
       title: "Relatório PDF gerado!",
-      description: `O relatório foi gerado e está sendo baixado como arquivo HTML (visualize como PDF).`,
+      description: `O relatório foi gerado e está sendo baixado como arquivo HTML (pode ser salvo como PDF).`,
     });
   };
 
@@ -243,7 +421,7 @@ export function ReportsModal({ isOpen, onClose, onReportGenerated }: ReportsModa
       <Card className="w-full max-w-lg">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Gerar Relatórios</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Gerar Relatórios PDF</h2>
             <Button variant="outline" size="icon" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
@@ -258,13 +436,13 @@ export function ReportsModal({ isOpen, onClose, onReportGenerated }: ReportsModa
                     key={report.id}
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                       selectedReport === report.id 
-                        ? 'border-farm-blue-500 bg-farm-blue-50' 
+                        ? 'border-blue-500 bg-blue-50' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     onClick={() => setSelectedReport(report.id)}
                   >
                     <div className="flex items-center gap-3">
-                      <report.icon className="h-5 w-5 text-farm-blue-500" />
+                      <report.icon className="h-5 w-5 text-blue-500" />
                       <span className="font-medium">{report.name}</span>
                     </div>
                   </div>
@@ -300,7 +478,7 @@ export function ReportsModal({ isOpen, onClose, onReportGenerated }: ReportsModa
               <Button variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button onClick={generateReport} className="bg-farm-blue-500 hover:bg-farm-blue-600">
+              <Button onClick={generateReport} className="bg-blue-500 hover:bg-blue-600">
                 <Download className="h-4 w-4 mr-2" />
                 Gerar PDF
               </Button>

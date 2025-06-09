@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { TreePine, Plus, Edit, Eye, MapPin, Users, DollarSign } from "lucide-react";
+import { TreePine, Plus, Edit, Eye, MapPin, Users, DollarSign, X } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,7 +20,8 @@ const mockPropriedades = [
     reservas: 12,
     receita: 4200,
     rating: 4.8,
-    fotos: 8
+    fotos: 8,
+    descricao: "Linda chácara com piscina, churrasqueira e muito verde."
   },
   {
     id: 2,
@@ -32,7 +33,8 @@ const mockPropriedades = [
     reservas: 0,
     receita: 0,
     rating: 0,
-    fotos: 5
+    fotos: 5,
+    descricao: "Sítio aconchegante perfeito para descanso em família."
   }
 ];
 
@@ -40,6 +42,8 @@ const ProprietarioPropriedades = () => {
   const { toast } = useToast();
   const [propriedades, setPropriedades] = useState(mockPropriedades);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState<typeof mockPropriedades[0] | null>(null);
+  const [editingProperty, setEditingProperty] = useState<typeof mockPropriedades[0] | null>(null);
   const [newProperty, setNewProperty] = useState({
     nome: '',
     localizacao: '',
@@ -54,6 +58,29 @@ const ProprietarioPropriedades = () => {
       case "pendente": return "bg-yellow-100 text-yellow-800";
       case "rejeitada": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const handleViewProperty = (propriedade: typeof mockPropriedades[0]) => {
+    setSelectedProperty(propriedade);
+    console.log('Visualizando propriedade:', propriedade);
+  };
+
+  const handleEditProperty = (propriedade: typeof mockPropriedades[0]) => {
+    setEditingProperty(propriedade);
+    console.log('Editando propriedade:', propriedade);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingProperty) {
+      setPropriedades(prev => prev.map(p => 
+        p.id === editingProperty.id ? editingProperty : p
+      ));
+      setEditingProperty(null);
+      toast({
+        title: "Propriedade atualizada!",
+        description: "As alterações foram salvas com sucesso.",
+      });
     }
   };
 
@@ -77,7 +104,8 @@ const ProprietarioPropriedades = () => {
       reservas: 0,
       receita: 0,
       rating: 0,
-      fotos: 0
+      fotos: 0,
+      descricao: newProperty.descricao
     };
 
     setPropriedades([...propriedades, novaPropriedade]);
@@ -180,11 +208,21 @@ const ProprietarioPropriedades = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="flex-1">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => handleViewProperty(propriedade)}
+                  >
                     <Eye className="w-4 h-4 mr-1" />
                     Ver
                   </Button>
-                  <Button size="sm" variant="outline" className="flex-1">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => handleEditProperty(propriedade)}
+                  >
                     <Edit className="w-4 h-4 mr-1" />
                     Editar
                   </Button>
@@ -193,6 +231,142 @@ const ProprietarioPropriedades = () => {
             </Card>
           ))}
         </div>
+
+        {/* View Property Modal */}
+        {selectedProperty && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold">Detalhes da Propriedade</h2>
+                  <Button variant="outline" size="icon" onClick={() => setSelectedProperty(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">{selectedProperty.nome}</h3>
+                    <Badge className={getStatusColor(selectedProperty.status)}>
+                      {selectedProperty.status}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Localização</label>
+                      <p>{selectedProperty.localizacao}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Capacidade</label>
+                      <p>{selectedProperty.capacidade} pessoas</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Preço por dia</label>
+                      <p className="text-lg font-bold text-green-600">R$ {selectedProperty.preco}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Avaliação</label>
+                      <p>{selectedProperty.rating || 'Sem avaliações'}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Descrição</label>
+                    <p>{selectedProperty.descricao}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Total de Reservas</label>
+                      <p className="text-lg font-bold text-blue-600">{selectedProperty.reservas}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Receita Total</label>
+                      <p className="text-lg font-bold text-green-600">R$ {selectedProperty.receita}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Edit Property Modal */}
+        {editingProperty && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold">Editar Propriedade</h2>
+                  <Button variant="outline" size="icon" onClick={() => setEditingProperty(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="edit-nome">Nome da Propriedade</Label>
+                    <Input
+                      id="edit-nome"
+                      value={editingProperty.nome}
+                      onChange={(e) => setEditingProperty({...editingProperty, nome: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-localizacao">Localização</Label>
+                    <Input
+                      id="edit-localizacao"
+                      value={editingProperty.localizacao}
+                      onChange={(e) => setEditingProperty({...editingProperty, localizacao: e.target.value})}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="edit-capacidade">Capacidade</Label>
+                      <Input
+                        id="edit-capacidade"
+                        type="number"
+                        value={editingProperty.capacidade}
+                        onChange={(e) => setEditingProperty({...editingProperty, capacidade: parseInt(e.target.value)})}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="edit-preco">Preço por dia</Label>
+                      <Input
+                        id="edit-preco"
+                        type="number"
+                        value={editingProperty.preco}
+                        onChange={(e) => setEditingProperty({...editingProperty, preco: parseFloat(e.target.value)})}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-descricao">Descrição</Label>
+                    <textarea
+                      id="edit-descricao"
+                      className="w-full border border-gray-300 rounded-lg p-3 min-h-20"
+                      value={editingProperty.descricao}
+                      onChange={(e) => setEditingProperty({...editingProperty, descricao: e.target.value})}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-3 mt-6">
+                  <Button onClick={handleSaveEdit} className="flex-1 bg-green-500 hover:bg-green-600">
+                    Salvar Alterações
+                  </Button>
+                  <Button variant="outline" onClick={() => setEditingProperty(null)} className="flex-1">
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
 
         {/* Add Property Modal */}
         {showAddForm && (
