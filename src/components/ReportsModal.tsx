@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { X, Download, FileText, BarChart3, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from 'jspdf';
 
 interface ReportsModalProps {
   isOpen: boolean;
@@ -79,309 +80,209 @@ export function ReportsModal({ isOpen, onClose, onReportGenerated }: ReportsModa
   };
 
   const generatePDF = (reportType: string, data: any) => {
-    // Criar conteúdo HTML mais elaborado para o PDF
-    let htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Relatório ${reportType.toUpperCase()}</title>
-        <style>
-          body { 
-            font-family: 'Arial', sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            background-color: #f8f9fa;
-          }
-          .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-          }
-          .header { 
-            text-align: center; 
-            margin-bottom: 40px; 
-            border-bottom: 3px solid #2563eb;
-            padding-bottom: 20px;
-          }
-          .logo { 
-            color: #2563eb; 
-            font-size: 28px; 
-            font-weight: bold; 
-            margin-bottom: 10px;
-          }
-          .report-title {
-            color: #1f2937;
-            font-size: 24px;
-            margin: 10px 0;
-          }
-          .summary { 
-            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); 
-            padding: 25px; 
-            margin-bottom: 30px; 
-            border-radius: 10px;
-            border-left: 5px solid #2563eb;
-          }
-          .summary h2 {
-            color: #1f2937;
-            margin-bottom: 20px;
-            font-size: 20px;
-          }
-          .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-          }
-          .stat-card {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          }
-          .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2563eb;
-          }
-          .stat-label {
-            color: #6b7280;
-            font-size: 14px;
-            margin-top: 5px;
-          }
-          .details { 
-            margin-top: 30px; 
-          }
-          .details h2 {
-            color: #1f2937;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-          }
-          table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-top: 15px; 
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          }
-          th, td { 
-            border: 1px solid #e5e7eb; 
-            padding: 12px 15px; 
-            text-align: left; 
-          }
-          th { 
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
-            color: white;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 0.5px;
-          }
-          tr:nth-child(even) { 
-            background-color: #f8fafc; 
-          }
-          tr:hover {
-            background-color: #e0f2fe;
-          }
-          .footer {
-            margin-top: 40px;
-            text-align: center;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            color: #6b7280;
-            font-size: 12px;
-          }
-          .date-info {
-            background: #dbeafe;
-            padding: 10px 15px;
-            border-radius: 6px;
-            color: #1e40af;
-            margin-bottom: 20px;
-          }
-          @media print {
-            body { background: white; }
-            .container { box-shadow: none; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <div class="logo">🏡 Sistema de Gestão de Chácaras</div>
-            <h1 class="report-title">RELATÓRIO ${reportType.toUpperCase()}</h1>
-            <div class="date-info">
-              <strong>Período:</strong> ${dateRange.start || 'Início'} a ${dateRange.end || 'Hoje'} | 
-              <strong>Gerado em:</strong> ${new Date().toLocaleString('pt-BR')}
-            </div>
-          </div>
-    `;
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    let yPosition = 20;
+
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('🏡 Sistema de Gestão de Chácaras', pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 15;
+    doc.setFontSize(16);
+    doc.text(`RELATÓRIO ${reportType.toUpperCase()}`, pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 10;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const dateInfo = `Período: ${dateRange.start || 'Início'} a ${dateRange.end || 'Hoje'} | Gerado em: ${new Date().toLocaleString('pt-BR')}`;
+    doc.text(dateInfo, pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 20;
+
+    // Content based on report type
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
     
     switch (reportType) {
       case 'clientes':
-        htmlContent += `
-          <div class="summary">
-            <h2>📊 RESUMO EXECUTIVO - CLIENTES</h2>
-            <div class="stat-grid">
-              <div class="stat-card">
-                <div class="stat-value">${data.total}</div>
-                <div class="stat-label">Total de Clientes</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.novos}</div>
-                <div class="stat-label">Novos Clientes</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.vip}</div>
-                <div class="stat-label">Clientes VIP</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.regulares}</div>
-                <div class="stat-label">Clientes Regulares</div>
-              </div>
-            </div>
-          </div>
-          <div class="details">
-            <h2>👥 DETALHES DOS CLIENTES</h2>
-            <table>
-              <tr><th>Nome</th><th>Tipo</th><th>Data Cadastro</th><th>Nº Reservas</th></tr>
-        `;
+        doc.text('📊 RESUMO EXECUTIVO - CLIENTES', 20, yPosition);
+        yPosition += 15;
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Total de Clientes: ${data.total}`, 20, yPosition);
+        yPosition += 8;
+        doc.text(`Novos Clientes: ${data.novos}`, 20, yPosition);
+        yPosition += 8;
+        doc.text(`Clientes VIP: ${data.vip}`, 20, yPosition);
+        yPosition += 8;
+        doc.text(`Clientes Regulares: ${data.regulares}`, 20, yPosition);
+        yPosition += 15;
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('👥 DETALHES DOS CLIENTES', 20, yPosition);
+        yPosition += 15;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Nome', 20, yPosition);
+        doc.text('Tipo', 80, yPosition);
+        doc.text('Cadastro', 120, yPosition);
+        doc.text('Reservas', 160, yPosition);
+        yPosition += 8;
+
+        doc.setFont('helvetica', 'normal');
         data.detalhes.forEach((cliente: any) => {
-          htmlContent += `<tr><td>${cliente.nome}</td><td><strong>${cliente.tipo}</strong></td><td>${cliente.cadastro}</td><td>${cliente.reservas}</td></tr>`;
+          if (yPosition > pageHeight - 30) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          doc.text(cliente.nome, 20, yPosition);
+          doc.text(cliente.tipo, 80, yPosition);
+          doc.text(cliente.cadastro, 120, yPosition);
+          doc.text(cliente.reservas.toString(), 160, yPosition);
+          yPosition += 8;
         });
-        htmlContent += `</table></div>`;
         break;
-        
+
       case 'reservas':
-        htmlContent += `
-          <div class="summary">
-            <h2>📅 RESUMO EXECUTIVO - RESERVAS</h2>
-            <div class="stat-grid">
-              <div class="stat-card">
-                <div class="stat-value">${data.total}</div>
-                <div class="stat-label">Total de Reservas</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.confirmadas}</div>
-                <div class="stat-label">Confirmadas</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.pendentes}</div>
-                <div class="stat-label">Pendentes</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">R$ ${data.receita.toLocaleString()}</div>
-                <div class="stat-label">Receita Total</div>
-              </div>
-            </div>
-          </div>
-          <div class="details">
-            <h2>🏡 DETALHES DAS RESERVAS</h2>
-            <table>
-              <tr><th>Cliente</th><th>Chácara</th><th>Data</th><th>Valor</th><th>Status</th></tr>
-        `;
+        doc.text('📅 RESUMO EXECUTIVO - RESERVAS', 20, yPosition);
+        yPosition += 15;
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Total de Reservas: ${data.total}`, 20, yPosition);
+        yPosition += 8;
+        doc.text(`Confirmadas: ${data.confirmadas}`, 20, yPosition);
+        yPosition += 8;
+        doc.text(`Pendentes: ${data.pendentes}`, 20, yPosition);
+        yPosition += 8;
+        doc.text(`Receita Total: R$ ${data.receita.toLocaleString()}`, 20, yPosition);
+        yPosition += 15;
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('🏡 DETALHES DAS RESERVAS', 20, yPosition);
+        yPosition += 15;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Cliente', 20, yPosition);
+        doc.text('Chácara', 70, yPosition);
+        doc.text('Data', 120, yPosition);
+        doc.text('Valor', 150, yPosition);
+        doc.text('Status', 180, yPosition);
+        yPosition += 8;
+
+        doc.setFont('helvetica', 'normal');
         data.detalhes.forEach((reserva: any) => {
-          htmlContent += `<tr><td>${reserva.cliente}</td><td>${reserva.chacara}</td><td>${reserva.data}</td><td><strong>R$ ${reserva.valor.toLocaleString()}</strong></td><td>${reserva.status}</td></tr>`;
+          if (yPosition > pageHeight - 30) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          doc.text(reserva.cliente, 20, yPosition);
+          doc.text(reserva.chacara, 70, yPosition);
+          doc.text(reserva.data, 120, yPosition);
+          doc.text(`R$ ${reserva.valor.toLocaleString()}`, 150, yPosition);
+          doc.text(reserva.status, 180, yPosition);
+          yPosition += 8;
         });
-        htmlContent += `</table></div>`;
         break;
-        
+
       case 'financeiro':
-        htmlContent += `
-          <div class="summary">
-            <h2>💰 RESUMO FINANCEIRO</h2>
-            <div class="stat-grid">
-              <div class="stat-card">
-                <div class="stat-value">R$ ${data.receita.toLocaleString()}</div>
-                <div class="stat-label">Receita Total</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">R$ ${data.despesas.toLocaleString()}</div>
-                <div class="stat-label">Despesas Totais</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">R$ ${data.lucro.toLocaleString()}</div>
-                <div class="stat-label">Lucro Líquido</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.pagamentosRecebidos}</div>
-                <div class="stat-label">Pagamentos Recebidos</div>
-              </div>
-            </div>
-          </div>
-          <div class="details">
-            <h2>💳 DETALHES FINANCEIROS</h2>
-            <table>
-              <tr><th>Tipo</th><th>Descrição</th><th>Valor</th></tr>
-        `;
-        data.detalhes.forEach((item: any) => {
-          htmlContent += `<tr><td><strong>${item.tipo}</strong></td><td>${item.descricao}</td><td>R$ ${item.valor.toLocaleString()}</td></tr>`;
-        });
-        htmlContent += `</table></div>`;
-        break;
+        doc.text('💰 RESUMO FINANCEIRO', 20, yPosition);
+        yPosition += 15;
         
-      case 'ocupacao':
-        htmlContent += `
-          <div class="summary">
-            <h2>📈 RESUMO DE OCUPAÇÃO</h2>
-            <div class="stat-grid">
-              <div class="stat-card">
-                <div class="stat-value">${data.taxaOcupacao}%</div>
-                <div class="stat-label">Taxa de Ocupação</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.chacarasOcupadas}</div>
-                <div class="stat-label">Chácaras Ocupadas</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.chacarasDisponiveis}</div>
-                <div class="stat-label">Chácaras Disponíveis</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value">${data.totalChacaras}</div>
-                <div class="stat-label">Total de Chácaras</div>
-              </div>
-            </div>
-          </div>
-          <div class="details">
-            <h2>🏘️ DETALHES POR CHÁCARA</h2>
-            <table>
-              <tr><th>Chácara</th><th>Taxa Ocupação</th><th>Dias Ocupados</th></tr>
-        `;
-        data.detalhes.forEach((chacara: any) => {
-          htmlContent += `<tr><td><strong>${chacara.chacara}</strong></td><td>${chacara.ocupacao}%</td><td>${chacara.dias} dias</td></tr>`;
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Receita Total: R$ ${data.receita.toLocaleString()}`, 20, yPosition);
+        yPosition += 8;
+        doc.text(`Despesas Totais: R$ ${data.despesas.toLocaleString()}`, 20, yPosition);
+        yPosition += 8;
+        doc.text(`Lucro Líquido: R$ ${data.lucro.toLocaleString()}`, 20, yPosition);
+        yPosition += 8;
+        doc.text(`Pagamentos Recebidos: ${data.pagamentosRecebidos}`, 20, yPosition);
+        yPosition += 15;
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('💳 DETALHES FINANCEIROS', 20, yPosition);
+        yPosition += 15;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Tipo', 20, yPosition);
+        doc.text('Descrição', 80, yPosition);
+        doc.text('Valor', 150, yPosition);
+        yPosition += 8;
+
+        doc.setFont('helvetica', 'normal');
+        data.detalhes.forEach((item: any) => {
+          if (yPosition > pageHeight - 30) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          doc.text(item.tipo, 20, yPosition);
+          doc.text(item.descricao, 80, yPosition);
+          doc.text(`R$ ${item.valor.toLocaleString()}`, 150, yPosition);
+          yPosition += 8;
         });
-        htmlContent += `</table></div>`;
+        break;
+
+      case 'ocupacao':
+        doc.text('📈 RESUMO DE OCUPAÇÃO', 20, yPosition);
+        yPosition += 15;
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Taxa de Ocupação: ${data.taxaOcupacao}%`, 20, yPosition);
+        yPosition += 8;
+        doc.text(`Chácaras Ocupadas: ${data.chacarasOcupadas}`, 20, yPosition);
+        yPosition += 8;
+        doc.text(`Chácaras Disponíveis: ${data.chacarasDisponiveis}`, 20, yPosition);
+        yPosition += 8;
+        doc.text(`Total de Chácaras: ${data.totalChacaras}`, 20, yPosition);
+        yPosition += 15;
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('🏘️ DETALHES POR CHÁCARA', 20, yPosition);
+        yPosition += 15;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Chácara', 20, yPosition);
+        doc.text('Ocupação', 100, yPosition);
+        doc.text('Dias Ocupados', 150, yPosition);
+        yPosition += 8;
+
+        doc.setFont('helvetica', 'normal');
+        data.detalhes.forEach((chacara: any) => {
+          if (yPosition > pageHeight - 30) {
+            doc.addPage();
+            yPosition = 20;
+          }
+          doc.text(chacara.chacara, 20, yPosition);
+          doc.text(`${chacara.ocupacao}%`, 100, yPosition);
+          doc.text(`${chacara.dias} dias`, 150, yPosition);
+          yPosition += 8;
+        });
         break;
     }
-    
-    htmlContent += `
-          <div class="footer">
-            <p><strong>Sistema de Gestão de Chácaras</strong> - Relatório gerado automaticamente em ${new Date().toLocaleString('pt-BR')}</p>
-            <p>Este documento contém informações confidenciais e é destinado exclusivamente ao uso interno.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-    
-    // Criar blob e fazer download
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `relatorio_${selectedReport}_${new Date().toISOString().split('T')[0]}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+
+    // Footer
+    const footerY = pageHeight - 20;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Sistema de Gestão de Chácaras - Relatório gerado automaticamente', pageWidth / 2, footerY, { align: 'center' });
+
+    // Save PDF
+    const filename = `relatorio_${selectedReport}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(filename);
   };
 
   const generateReport = () => {
@@ -397,20 +298,20 @@ export function ReportsModal({ isOpen, onClose, onReportGenerated }: ReportsModa
     const reportData = generateReportData(selectedReport);
     generatePDF(selectedReport, reportData);
 
-    console.log('Relatório gerado:', { selectedReport, dateRange, data: reportData });
+    console.log('Relatório PDF gerado:', { selectedReport, dateRange, data: reportData });
     
     if (onReportGenerated) {
       onReportGenerated({
         type: selectedReport,
         dateRange,
         generatedAt: new Date(),
-        filename: `relatorio_${selectedReport}_${new Date().toISOString().split('T')[0]}.html`
+        filename: `relatorio_${selectedReport}_${new Date().toISOString().split('T')[0]}.pdf`
       });
     }
     
     toast({
       title: "Relatório PDF gerado!",
-      description: `O relatório foi gerado e está sendo baixado como arquivo HTML (pode ser salvo como PDF).`,
+      description: `O relatório em PDF foi gerado e está sendo baixado.`,
     });
   };
 

@@ -25,8 +25,8 @@ const DashboardProprietario = () => {
   const { user } = useAuth();
   const { reservations, payments } = useReservations();
 
-  // Filtrar reservas das propriedades do proprietário
-  const proprietarioReservas = reservations.filter(r => r.userId === user?.id || r.userId === '2'); // Incluindo reservas do proprietário
+  // Mostrar TODAS as reservas no dashboard do proprietário
+  const todasReservas = reservations; // Todas as reservas, incluindo de visitantes
   const proprietarioReceitas = payments.filter(p => p.status === 'pago').reduce((sum, p) => sum + p.amount, 0);
 
   const getStatusColor = (status: string) => {
@@ -42,7 +42,7 @@ const DashboardProprietario = () => {
     }
   };
 
-  const handleViewReservation = (reserva: typeof proprietarioReservas[0]) => {
+  const handleViewReservation = (reserva: typeof todasReservas[0]) => {
     toast({
       title: "Detalhes da Reserva",
       description: `${reserva.clientName} - ${reserva.propertyName} - R$ ${reserva.totalAmount.toLocaleString()}`,
@@ -129,7 +129,7 @@ const DashboardProprietario = () => {
           />
           <StatsCard
             title="Reservas Este Mês"
-            value={proprietarioReservas.length.toString()}
+            value={todasReservas.length.toString()}
             icon={Calendar}
             trend="+15% vs mês anterior"
             trendUp={true}
@@ -181,7 +181,7 @@ const DashboardProprietario = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-gray-800">Reservas Pendentes</h3>
-                <p className="text-sm text-gray-600">{proprietarioReservas.filter(r => r.status === 'pendente').length} aguardando confirmação</p>
+                <p className="text-sm text-gray-600">{todasReservas.filter(r => r.status === 'pendente').length} aguardando confirmação</p>
               </div>
               <Button 
                 className="bg-blue-500 hover:bg-blue-600"
@@ -223,7 +223,7 @@ const DashboardProprietario = () => {
         {/* Recent Reservations - Mostrando TODAS as reservas incluindo de visitantes */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-800">Todas as Reservas</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Reservas Recentes (Todas)</h2>
             <Button 
               variant="outline"
               onClick={() => {
@@ -253,7 +253,7 @@ const DashboardProprietario = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {proprietarioReservas.map((reserva) => (
+                  {todasReservas.slice(0, 5).map((reserva) => (
                     <tr key={reserva.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {reserva.clientName}
