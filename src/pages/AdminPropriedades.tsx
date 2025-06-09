@@ -7,52 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { TreePine, Search, Eye, Check, X, MapPin, Users } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-
-const mockPropriedades = [
-  {
-    id: 1,
-    nome: "Chácara Vista Verde",
-    proprietario: "João Silva",
-    localizacao: "Atibaia, SP",
-    capacidade: 20,
-    preco: 350,
-    status: "aprovada",
-    reservas: 12,
-    receita: 4200,
-    dataCadastro: "15/01/2024"
-  },
-  {
-    id: 2,
-    nome: "Sítio do Sol",
-    proprietario: "Ana Costa",
-    localizacao: "Ibiúna, SP",
-    capacidade: 15,
-    preco: 280,
-    status: "pendente",
-    reservas: 0,
-    receita: 0,
-    dataCadastro: "20/01/2024"
-  },
-  {
-    id: 3,
-    nome: "Chácara Recanto Feliz",
-    proprietario: "Pedro Lima",
-    localizacao: "Mairiporã, SP",
-    capacidade: 30,
-    preco: 420,
-    status: "aprovada",
-    reservas: 8,
-    receita: 3360,
-    dataCadastro: "10/01/2024"
-  }
-];
+import { useAppData } from "@/context/AppDataContext";
 
 const AdminPropriedades = () => {
   const { toast } = useToast();
-  const [propriedades, setPropriedades] = useState(mockPropriedades);
+  const { properties, updatePropertyStatus } = useAppData();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredProperties = propriedades.filter(prop =>
+  const filteredProperties = properties.filter(prop =>
     prop.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     prop.proprietario.toLowerCase().includes(searchTerm.toLowerCase()) ||
     prop.localizacao.toLowerCase().includes(searchTerm.toLowerCase())
@@ -68,9 +30,7 @@ const AdminPropriedades = () => {
   };
 
   const handleApprove = (id: number) => {
-    setPropriedades(prev => prev.map(p => 
-      p.id === id ? { ...p, status: 'aprovada' } : p
-    ));
+    updatePropertyStatus(id, 'aprovada');
     toast({
       title: "Propriedade aprovada!",
       description: "A propriedade foi aprovada e está disponível para reservas.",
@@ -78,9 +38,7 @@ const AdminPropriedades = () => {
   };
 
   const handleReject = (id: number) => {
-    setPropriedades(prev => prev.map(p => 
-      p.id === id ? { ...p, status: 'rejeitada' } : p
-    ));
+    updatePropertyStatus(id, 'rejeitada');
     toast({
       title: "Propriedade rejeitada",
       description: "A propriedade foi rejeitada e não estará disponível.",
@@ -88,8 +46,8 @@ const AdminPropriedades = () => {
     });
   };
 
-  const totalReceita = propriedades.reduce((sum, p) => sum + p.receita, 0);
-  const totalReservas = propriedades.reduce((sum, p) => sum + p.reservas, 0);
+  const totalReceita = properties.reduce((sum, p) => sum + p.receita, 0);
+  const totalReservas = properties.reduce((sum, p) => sum + p.reservas, 0);
 
   return (
     <Layout>
@@ -107,15 +65,15 @@ const AdminPropriedades = () => {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="p-6 text-center">
-            <p className="text-3xl font-bold text-green-600">{propriedades.length}</p>
+            <p className="text-3xl font-bold text-green-600">{properties.length}</p>
             <p className="text-sm text-gray-600">Total Propriedades</p>
           </Card>
           <Card className="p-6 text-center">
-            <p className="text-3xl font-bold text-blue-600">{propriedades.filter(p => p.status === 'aprovada').length}</p>
+            <p className="text-3xl font-bold text-blue-600">{properties.filter(p => p.status === 'aprovada').length}</p>
             <p className="text-sm text-gray-600">Aprovadas</p>
           </Card>
           <Card className="p-6 text-center">
-            <p className="text-3xl font-bold text-yellow-600">{propriedades.filter(p => p.status === 'pendente').length}</p>
+            <p className="text-3xl font-bold text-yellow-600">{properties.filter(p => p.status === 'pendente').length}</p>
             <p className="text-sm text-gray-600">Pendentes</p>
           </Card>
           <Card className="p-6 text-center">

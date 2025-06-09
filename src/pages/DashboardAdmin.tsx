@@ -1,4 +1,3 @@
-
 import { Layout } from "@/components/Layout";
 import { StatsCard } from "@/components/StatsCard";
 import { Button } from "@/components/ui/button";
@@ -22,65 +21,11 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-
-const mockUsuarios = [
-  {
-    id: 1,
-    nome: "João Silva",
-    email: "joao@email.com",
-    tipo: "Proprietário",
-    status: "ativo",
-    ultimoLogin: "Hoje"
-  },
-  {
-    id: 2,
-    nome: "Maria Santos",
-    email: "maria@email.com",
-    tipo: "Visitante",
-    status: "ativo",
-    ultimoLogin: "Ontem"
-  },
-  {
-    id: 3,
-    nome: "Carlos Oliveira",
-    email: "carlos@email.com",
-    tipo: "Proprietário",
-    status: "pendente",
-    ultimoLogin: "2 dias atrás"
-  }
-];
-
-const mockChacaras = [
-  {
-    id: 1,
-    nome: "Chácara Vista Verde",
-    proprietario: "João Silva",
-    status: "aprovada",
-    reservas: 12,
-    receita: "R$ 4.200,00"
-  },
-  {
-    id: 2,
-    nome: "Sítio do Sol",
-    proprietario: "Ana Costa",
-    status: "pendente",
-    reservas: 0,
-    receita: "R$ 0,00"
-  },
-  {
-    id: 3,
-    nome: "Chácara Recanto Feliz",
-    proprietario: "Pedro Lima",
-    status: "aprovada",
-    reservas: 8,
-    receita: "R$ 3.360,00"
-  }
-];
+import { useAppData } from "@/context/AppDataContext";
 
 const DashboardAdmin = () => {
   const { toast } = useToast();
-  const [usuarios, setUsuarios] = useState(mockUsuarios);
-  const [chacaras, setChacaras] = useState(mockChacaras);
+  const { users, properties, transactions, updatePropertyStatus } = useAppData();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -98,7 +43,7 @@ const DashboardAdmin = () => {
   };
 
   const handleUserAction = (userId: number, action: string) => {
-    const usuario = usuarios.find(u => u.id === userId);
+    const usuario = users.find(u => u.id === userId);
     console.log(`Ação "${action}" executada para usuário:`, usuario);
     
     toast({
@@ -108,21 +53,19 @@ const DashboardAdmin = () => {
   };
 
   const handlePropertyAction = (propertyId: number, action: string) => {
-    const chacara = chacaras.find(c => c.id === propertyId);
+    const propriedade = properties.find(p => p.id === propertyId);
     
     if (action === 'aprovar') {
-      setChacaras(prev => prev.map(c => 
-        c.id === propertyId ? { ...c, status: 'aprovada' } : c
-      ));
+      updatePropertyStatus(propertyId, 'aprovada');
       toast({
         title: "Propriedade aprovada!",
-        description: `${chacara?.nome} foi aprovada com sucesso.`,
+        description: `${propriedade?.nome} foi aprovada com sucesso.`,
       });
     } else {
-      console.log(`Ação "${action}" executada para propriedade:`, chacara);
+      console.log(`Ação "${action}" executada para propriedade:`, propriedade);
       toast({
         title: `${action} executado`,
-        description: `Ação realizada para ${chacara?.nome}`,
+        description: `Ação realizada para ${propriedade?.nome}`,
       });
     }
   };
@@ -158,6 +101,12 @@ const DashboardAdmin = () => {
     }
   };
 
+  // Calcular estatísticas baseadas em dados reais
+  const totalReceita = transactions.filter(t => t.status === 'pago').reduce((sum, t) => sum + t.valor, 0);
+  const totalComissao = transactions.filter(t => t.status === 'pago').reduce((sum, t) => sum + t.comissao, 0);
+  const activeProperties = properties.filter(p => p.status === 'aprovada').length;
+  const activeUsers = users.filter(u => u.status === 'ativo').length;
+
   return (
     <Layout>
       <div className="space-y-8 animate-fade-in">
@@ -170,7 +119,7 @@ const DashboardAdmin = () => {
             </div>
             <div className="text-right">
               <p className="text-purple-200 text-sm">Taxa da plataforma</p>
-              <p className="text-3xl font-bold">R$ 2.850,00</p>
+              <p className="text-3xl font-bold">R$ {totalComissao.toLocaleString()}</p>
               <p className="text-purple-100 text-sm">Este mês</p>
             </div>
           </div>
@@ -180,25 +129,31 @@ const DashboardAdmin = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <StatsCard
             title="Total Usuários"
-            value="1,247"
+            value={users.length.toString()}
             icon={Users}
-            trend="+23 novos hoje"
+            trend={`+${users.filter(u => {
+              const cadastroRecente = new Date(u.dataCadastro.split('/').reverse().join('-')) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+              return cadastroRecente;
+            }).length} esta semana`}
             trendUp={true}
             bgColor="bg-purple-50"
             iconColor="text-purple-500"
           />
           <StatsCard
             title="Propriedades Ativas"
-            value="89"
+            value={activeProperties.toString()}
             icon={Home}
-            trend="+5 este mês"
+            trend={`+${properties.filter(p => {
+              const cadastroRecente = new Date(p.dataCadastro.split('/').reverse().join('-')) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+              return cadastroRecente;
+            }).length} este mês`}
             trendUp={true}
             bgColor="bg-green-50"
             iconColor="text-green-500"
           />
           <StatsCard
             title="Receita Total"
-            value="R$ 125K"
+            value={`R$ ${(totalReceita / 1000).toFixed(0)}K`}
             icon={DollarSign}
             trend="+18% vs mês anterior"
             trendUp={true}
@@ -295,12 +250,12 @@ const DashboardAdmin = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Último Login</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cadastro</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {usuarios.map((usuario) => (
+                  {users.slice(-5).reverse().map((usuario) => (
                     <tr key={usuario.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {usuario.nome}
@@ -317,7 +272,7 @@ const DashboardAdmin = () => {
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {usuario.ultimoLogin}
+                        {usuario.dataCadastro}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                         <Button 
@@ -368,39 +323,39 @@ const DashboardAdmin = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {chacaras.map((chacara) => (
-                    <tr key={chacara.id}>
+                  {properties.slice(-5).reverse().map((propriedade) => (
+                    <tr key={propriedade.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {chacara.nome}
+                        {propriedade.nome}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {chacara.proprietario}
+                        {propriedade.proprietario}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge className={getStatusColor(chacara.status)}>
-                          {chacara.status}
+                        <Badge className={getStatusColor(propriedade.status)}>
+                          {propriedade.status}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {chacara.reservas}
+                        {propriedade.reservas}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                        {chacara.receita}
+                        R$ {propriedade.receita.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => handlePropertyAction(chacara.id, 'Ver')}
+                          onClick={() => handlePropertyAction(propriedade.id, 'Ver')}
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           Ver
                         </Button>
-                        {chacara.status === 'pendente' ? (
+                        {propriedade.status === 'pendente' ? (
                           <Button 
                             size="sm" 
                             className="bg-green-500 hover:bg-green-600 text-white"
-                            onClick={() => handlePropertyAction(chacara.id, 'aprovar')}
+                            onClick={() => handlePropertyAction(propriedade.id, 'aprovar')}
                           >
                             <Check className="w-4 h-4 mr-1" />
                             Aprovar
@@ -409,7 +364,7 @@ const DashboardAdmin = () => {
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => handlePropertyAction(chacara.id, 'Editar')}
+                            onClick={() => handlePropertyAction(propriedade.id, 'Editar')}
                           >
                             <Edit className="w-4 h-4 mr-1" />
                             Editar

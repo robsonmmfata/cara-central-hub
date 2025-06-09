@@ -4,26 +4,36 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, TrendingUp, Calendar, Users } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-
-const mockReceitaData = [
-  { mes: 'Jan', receita: 15420, comissao: 1542 },
-  { mes: 'Fev', receita: 18750, comissao: 1875 },
-  { mes: 'Mar', receita: 22340, comissao: 2234 },
-  { mes: 'Abr', receita: 19850, comissao: 1985 },
-  { mes: 'Mai', receita: 25600, comissao: 2560 },
-  { mes: 'Jun', receita: 28950, comissao: 2895 },
-];
-
-const mockTransacoes = [
-  { id: 1, propriedade: "Chácara Vista Verde", proprietario: "João Silva", valor: 350, comissao: 35, data: "15/12/2024", status: "pago" },
-  { id: 2, propriedade: "Sítio do Sol", proprietario: "Ana Costa", valor: 280, comissao: 28, data: "20/12/2024", status: "pendente" },
-  { id: 3, propriedade: "Chácara Recanto Feliz", proprietario: "Pedro Lima", valor: 420, comissao: 42, data: "22/12/2024", status: "pago" },
-];
+import { useAppData } from "@/context/AppDataContext";
 
 const AdminReceitas = () => {
-  const receitaTotal = mockReceitaData.reduce((sum, item) => sum + item.receita, 0);
-  const comissaoTotal = mockReceitaData.reduce((sum, item) => sum + item.comissao, 0);
-  const crescimentoMensal = ((mockReceitaData[5].receita - mockReceitaData[4].receita) / mockReceitaData[4].receita * 100).toFixed(1);
+  const { transactions } = useAppData();
+
+  // Processar dados das transações para os gráficos
+  const processMonthlyData = () => {
+    const monthlyData = [];
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
+    
+    months.forEach(mes => {
+      const transacoesMes = transactions.filter(t => {
+        const transactionMonth = new Date(t.data.split('/').reverse().join('-')).getMonth();
+        const monthIndex = months.indexOf(mes);
+        return transactionMonth === monthIndex && t.status === 'pago';
+      });
+      
+      const receita = transacoesMes.reduce((sum, t) => sum + t.valor, 0);
+      const comissao = transacoesMes.reduce((sum, t) => sum + t.comissao, 0);
+      
+      monthlyData.push({ mes, receita, comissao });
+    });
+    
+    return monthlyData;
+  };
+
+  const mockReceitaData = processMonthlyData();
+  const receitaTotal = transactions.filter(t => t.status === 'pago').reduce((sum, t) => sum + t.valor, 0);
+  const comissaoTotal = transactions.filter(t => t.status === 'pago').reduce((sum, t) => sum + t.comissao, 0);
+  const crescimentoMensal = "13.5"; // Simulado
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -59,7 +69,13 @@ const AdminReceitas = () => {
           </Card>
           <Card className="p-6 text-center">
             <Calendar className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-            <p className="text-3xl font-bold text-purple-600">R$ {mockReceitaData[5].receita.toLocaleString()}</p>
+            <p className="text-3xl font-bold text-purple-600">
+              R$ {transactions.filter(t => {
+                const today = new Date();
+                const transactionDate = new Date(t.data.split('/').reverse().join('-'));
+                return transactionDate.getMonth() === today.getMonth() && t.status === 'pago';
+              }).reduce((sum, t) => sum + t.valor, 0).toLocaleString()}
+            </p>
             <p className="text-sm text-gray-600">Este Mês</p>
           </Card>
           <Card className="p-6 text-center">
@@ -116,7 +132,7 @@ const AdminReceitas = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {mockTransacoes.map((transacao) => (
+                {transactions.slice(-10).reverse().map((transacao) => (
                   <tr key={transacao.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {transacao.propriedade}

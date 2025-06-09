@@ -1,4 +1,3 @@
-
 import { Layout } from "@/components/Layout";
 import { StatsCard } from "@/components/StatsCard";
 import { PropertyDetailsModal } from "@/components/PropertyDetailsModal";
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAppData } from "@/context/AppDataContext";
 
 const mockChacaras = [
   {
@@ -57,9 +57,25 @@ const mockChacaras = [
 
 const DashboardVisitante = () => {
   const { toast } = useToast();
-  const [chacaras, setChacaras] = useState(mockChacaras);
-  const [filteredChacaras, setFilteredChacaras] = useState(mockChacaras);
-  const [selectedProperty, setSelectedProperty] = useState<typeof mockChacaras[0] | null>(null);
+  const { properties, addTransaction } = useAppData();
+  
+  // Filtrar apenas propriedades aprovadas para visitantes
+  const availableProperties = properties.filter(p => p.status === 'aprovada');
+  
+  const [chacaras, setChacaras] = useState(availableProperties.map(p => ({
+    id: p.id,
+    nome: p.nome,
+    localizacao: p.localizacao,
+    preco: `R$ ${p.preco}/dia`,
+    capacidade: `Até ${p.capacidade} pessoas`,
+    rating: p.rating || 4.5,
+    favorito: false,
+    imagem: p.imagem || "/placeholder.svg",
+    descricao: p.descricao || "Propriedade disponível para reserva"
+  })));
+  
+  const [filteredChacaras, setFilteredChacaras] = useState(chacaras);
+  const [selectedProperty, setSelectedProperty] = useState<typeof chacaras[0] | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [searchFilters, setSearchFilters] = useState({
     checkin: '',
@@ -68,8 +84,25 @@ const DashboardVisitante = () => {
     localizacao: ''
   });
 
+  // Atualizar chácaras quando propriedades mudarem
+  useState(() => {
+    const updatedChacaras = availableProperties.map(p => ({
+      id: p.id,
+      nome: p.nome,
+      localizacao: p.localizacao,
+      preco: `R$ ${p.preco}/dia`,
+      capacidade: `Até ${p.capacidade} pessoas`,
+      rating: p.rating || 4.5,
+      favorito: chacaras.find(c => c.id === p.id)?.favorito || false,
+      imagem: p.imagem || "/placeholder.svg",
+      descricao: p.descricao || "Propriedade disponível para reserva"
+    }));
+    setChacaras(updatedChacaras);
+    setFilteredChacaras(updatedChacaras);
+  });
+
   const handleFavorite = (propertyId: number) => {
-    const updateChacaras = (prev: typeof mockChacaras) => 
+    const updateChacaras = (prev: typeof chacaras) => 
       prev.map(chacara => 
         chacara.id === propertyId 
           ? { ...chacara, favorito: !chacara.favorito }
@@ -86,7 +119,7 @@ const DashboardVisitante = () => {
     });
   };
 
-  const handleViewDetails = (property: typeof mockChacaras[0]) => {
+  const handleViewDetails = (property: typeof chacaras[0]) => {
     setSelectedProperty(property);
     setShowDetailsModal(true);
   };
