@@ -6,49 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { DollarSign, TrendingUp, Clock, CheckCircle, Search, Eye, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Payment {
-  id: string;
-  client: string;
-  property: string;
-  amount: number;
-  status: 'pendente' | 'pago' | 'atrasado';
-  dueDate: string;
-  paymentDate?: string;
-  method?: string;
-}
+import { useReservations } from "@/context/ReservationContext";
 
 export function PaymentsManager() {
   const { toast } = useToast();
-  const [payments, setPayments] = useState<Payment[]>([
-    {
-      id: '1',
-      client: 'João Silva',
-      property: 'Chácara Vista Verde',
-      amount: 1200,
-      status: 'pago',
-      dueDate: '2024-03-15',
-      paymentDate: '2024-03-14',
-      method: 'PIX'
-    },
-    {
-      id: '2',
-      client: 'Maria Santos',
-      property: 'Sítio do Sol',
-      amount: 800,
-      status: 'pendente',
-      dueDate: '2024-04-05'
-    },
-    {
-      id: '3',
-      client: 'Carlos Oliveira',
-      property: 'Chácara Recanto Feliz',
-      amount: 950,
-      status: 'atrasado',
-      dueDate: '2024-03-20'
-    }
-  ]);
-
+  const { payments, confirmPayment } = useReservations();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredPayments = payments.filter(payment =>
@@ -56,7 +18,7 @@ export function PaymentsManager() {
     payment.property.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleViewPayment = (payment: Payment) => {
+  const handleViewPayment = (payment: typeof payments[0]) => {
     toast({
       title: "Detalhes do Pagamento",
       description: `${payment.client} - ${payment.property} - R$ ${payment.amount.toLocaleString()}`,
@@ -65,16 +27,12 @@ export function PaymentsManager() {
   };
 
   const handleConfirmPayment = (paymentId: string) => {
-    setPayments(prev => prev.map(payment => 
-      payment.id === paymentId 
-        ? { ...payment, status: 'pago' as const, paymentDate: new Date().toISOString().split('T')[0], method: 'PIX' }
-        : payment
-    ));
+    confirmPayment(paymentId);
     
     const payment = payments.find(p => p.id === paymentId);
     toast({
       title: "Pagamento confirmado!",
-      description: `Pagamento de ${payment?.client} foi confirmado com sucesso.`,
+      description: `Pagamento de ${payment?.client} foi confirmado e contabilizado nas receitas.`,
     });
   };
 

@@ -20,10 +20,14 @@ import {
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { useReservations } from "@/context/ReservationContext";
 
 const ReservaChacara = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addReservation, setCurrentReservation } = useReservations();
   const [searchParams] = useSearchParams();
   const propertyId = searchParams.get('id');
   
@@ -31,24 +35,48 @@ const ReservaChacara = () => {
     checkIn: '',
     checkOut: '',
     hospedes: 2,
-    nomeCompleto: '',
-    email: '',
+    nomeCompleto: user?.name || '',
+    email: user?.email || '',
     telefone: '',
     observacoes: '',
     metodoPagamento: 'pix'
   });
 
-  // Mock da propriedade baseado no ID
-  const property = {
-    id: propertyId || '1',
-    nome: 'Chácara Vista Verde',
-    localizacao: 'Ibiúna, SP',
-    preco: 420,
-    capacidade: '8 pessoas',
-    rating: 4.8,
-    imagem: '/placeholder.svg',
-    comodidades: ['Wi-Fi', 'Estacionamento', 'Cozinha', 'Piscina']
+  // Mock properties data
+  const properties = {
+    '1': {
+      id: '1',
+      nome: 'Chácara Vista Verde',
+      localizacao: 'Ibiúna, SP',
+      preco: 420,
+      capacidade: '8 pessoas',
+      rating: 4.8,
+      imagem: '/placeholder.svg',
+      comodidades: ['Wi-Fi', 'Estacionamento', 'Cozinha', 'Piscina']
+    },
+    '2': {
+      id: '2',
+      nome: 'Sítio do Sol',
+      localizacao: 'Atibaia, SP',
+      preco: 350,
+      capacidade: '12 pessoas',
+      rating: 4.9,
+      imagem: '/placeholder.svg',
+      comodidades: ['Wi-Fi', 'Estacionamento', 'Cozinha', 'Piscina']
+    },
+    '3': {
+      id: '3',
+      nome: 'Chácara Recanto Feliz',
+      localizacao: 'Mairiporã, SP',
+      preco: 480,
+      capacidade: '10 pessoas',
+      rating: 4.7,
+      imagem: '/placeholder.svg',
+      comodidades: ['Wi-Fi', 'Estacionamento', 'Cozinha', 'Piscina']
+    }
   };
+
+  const property = properties[propertyId as keyof typeof properties] || properties['1'];
 
   const calcularTotal = () => {
     if (!reservaData.checkIn || !reservaData.checkOut) return 0;
@@ -80,6 +108,40 @@ const ReservaChacara = () => {
       });
       return;
     }
+
+    // Criar reserva
+    const reservationId = addReservation({
+      propertyId: property.id,
+      propertyName: property.nome,
+      clientName: reservaData.nomeCompleto,
+      clientEmail: reservaData.email,
+      checkIn: reservaData.checkIn,
+      checkOut: reservaData.checkOut,
+      guests: reservaData.hospedes,
+      totalAmount: total,
+      status: 'confirmada',
+      paymentStatus: 'pendente',
+      userId: user?.id
+    });
+
+    // Definir como reserva atual para o check-in
+    const newReservation = {
+      id: reservationId,
+      propertyId: property.id,
+      propertyName: property.nome,
+      clientName: reservaData.nomeCompleto,
+      clientEmail: reservaData.email,
+      checkIn: reservaData.checkIn,
+      checkOut: reservaData.checkOut,
+      guests: reservaData.hospedes,
+      totalAmount: total,
+      status: 'confirmada' as const,
+      paymentStatus: 'pendente' as const,
+      createdAt: new Date().toISOString(),
+      userId: user?.id
+    };
+
+    setCurrentReservation(newReservation);
 
     console.log('Finalizando reserva:', {
       property: property.nome,
@@ -184,7 +246,7 @@ const ReservaChacara = () => {
                     id="hospedes"
                     type="number"
                     min="1"
-                    max="8"
+                    max="20"
                     value={reservaData.hospedes}
                     onChange={(e) => setReservaData({...reservaData, hospedes: parseInt(e.target.value)})}
                   />

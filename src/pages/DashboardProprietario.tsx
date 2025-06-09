@@ -13,59 +13,21 @@ import {
   Home,
   CheckCircle,
   Clock,
-  AlertCircle
+  Eye
 } from "lucide-react";
-
-const mockReservas = [
-  {
-    id: 1,
-    cliente: "João Silva",
-    chacara: "Chácara Vista Verde",
-    data: "15/12/2024",
-    valor: "R$ 350,00",
-    status: "confirmada",
-    pessoas: 18
-  },
-  {
-    id: 2,
-    cliente: "Maria Santos",
-    chacara: "Sítio do Sol",
-    data: "20/12/2024",
-    valor: "R$ 420,00",
-    status: "pendente",
-    pessoas: 25
-  },
-  {
-    id: 3,
-    cliente: "Carlos Oliveira",
-    chacara: "Chácara Vista Verde",
-    data: "22/12/2024",
-    valor: "R$ 350,00",
-    status: "confirmada",
-    pessoas: 15
-  }
-];
-
-const mockChacaras = [
-  {
-    id: 1,
-    nome: "Chácara Vista Verde",
-    reservasEsteMe: 12,
-    receita: "R$ 4.200,00",
-    ocupacao: "85%",
-    status: "ativa"
-  },
-  {
-    id: 2,
-    nome: "Sítio do Sol",
-    reservasEsteMe: 8,
-    receita: "R$ 2.800,00",
-    ocupacao: "67%",
-    status: "ativa"
-  }
-];
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { useReservations } from "@/context/ReservationContext";
 
 const DashboardProprietario = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { reservations, payments } = useReservations();
+
+  // Filtrar dados do proprietário (simulando que tem acesso a todas as reservas de suas propriedades)
+  const proprietarioReservas = reservations.slice(0, 5); // Limitando para não sobrecarregar
+  const proprietarioReceitas = payments.filter(p => p.status === 'pago').reduce((sum, p) => sum + p.amount, 0);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmada":
@@ -79,6 +41,65 @@ const DashboardProprietario = () => {
     }
   };
 
+  const handleViewReservation = (reserva: typeof proprietarioReservas[0]) => {
+    toast({
+      title: "Detalhes da Reserva",
+      description: `${reserva.clientName} - ${reserva.propertyName} - R$ ${reserva.totalAmount.toLocaleString()}`,
+    });
+    console.log('Visualizando reserva:', reserva);
+  };
+
+  const handleViewAllReservations = () => {
+    navigate('/proprietario/reservas');
+    toast({
+      title: "Carregando todas as reservas",
+      description: "Redirecionando para a página de reservas...",
+    });
+  };
+
+  const handleNewProperty = () => {
+    navigate('/proprietario/propriedades');
+    toast({
+      title: "Nova Propriedade",
+      description: "Redirecionando para cadastro de propriedades...",
+    });
+  };
+
+  const handlePendingReservations = () => {
+    navigate('/proprietario/reservas');
+    toast({
+      title: "Reservas Pendentes",
+      description: "Visualizando reservas que aguardam confirmação...",
+    });
+  };
+
+  const handleReports = () => {
+    navigate('/relatorios');
+    toast({
+      title: "Relatórios",
+      description: "Abrindo página de relatórios...",
+    });
+  };
+
+  const mockChacaras = [
+    {
+      id: 1,
+      nome: "Chácara Vista Verde",
+      reservasEsteMe: 12,
+      receita: "R$ 4.200,00",
+      ocupacao: "85%",
+      status: "ativa"
+    },
+    {
+      id: 2,
+      nome: "Sítio do Sol",
+      reservasEsteMe: 8,
+      receita: "R$ 2.800,00",
+      ocupacao: "67%",
+      status: "ativa"
+    }
+  ];
+
   return (
     <Layout>
       <div className="space-y-8 animate-fade-in">
@@ -91,7 +112,7 @@ const DashboardProprietario = () => {
             </div>
             <div className="text-right">
               <p className="text-green-200 text-sm">Receita do mês</p>
-              <p className="text-3xl font-bold">R$ 7.000,00</p>
+              <p className="text-3xl font-bold">R$ {proprietarioReceitas.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -107,7 +128,7 @@ const DashboardProprietario = () => {
           />
           <StatsCard
             title="Reservas Este Mês"
-            value="20"
+            value={proprietarioReservas.length.toString()}
             icon={Calendar}
             trend="+15% vs mês anterior"
             trendUp={true}
@@ -116,7 +137,7 @@ const DashboardProprietario = () => {
           />
           <StatsCard
             title="Receita Mensal"
-            value="R$ 7.0K"
+            value={`R$ ${(proprietarioReceitas / 1000).toFixed(1)}K`}
             icon={DollarSign}
             trend="+12% este mês"
             trendUp={true}
@@ -140,7 +161,10 @@ const DashboardProprietario = () => {
                 <h3 className="font-semibold text-gray-800">Nova Propriedade</h3>
                 <p className="text-sm text-gray-600">Cadastre uma nova chácara</p>
               </div>
-              <Button className="bg-green-500 hover:bg-green-600">
+              <Button 
+                className="bg-green-500 hover:bg-green-600"
+                onClick={handleNewProperty}
+              >
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
@@ -150,9 +174,12 @@ const DashboardProprietario = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-gray-800">Reservas Pendentes</h3>
-                <p className="text-sm text-gray-600">3 aguardando confirmação</p>
+                <p className="text-sm text-gray-600">{proprietarioReservas.filter(r => r.status === 'pendente').length} aguardando confirmação</p>
               </div>
-              <Button className="bg-blue-500 hover:bg-blue-600">
+              <Button 
+                className="bg-blue-500 hover:bg-blue-600"
+                onClick={handlePendingReservations}
+              >
                 <Clock className="w-4 h-4" />
               </Button>
             </div>
@@ -164,7 +191,10 @@ const DashboardProprietario = () => {
                 <h3 className="font-semibold text-gray-800">Relatórios</h3>
                 <p className="text-sm text-gray-600">Visualizar analytics</p>
               </div>
-              <Button className="bg-orange-500 hover:bg-orange-600">
+              <Button 
+                className="bg-orange-500 hover:bg-orange-600"
+                onClick={handleReports}
+              >
                 <TrendingUp className="w-4 h-4" />
               </Button>
             </div>
@@ -175,7 +205,12 @@ const DashboardProprietario = () => {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-800">Reservas Recentes</h2>
-            <Button variant="outline">Ver todas</Button>
+            <Button 
+              variant="outline"
+              onClick={handleViewAllReservations}
+            >
+              Ver todas
+            </Button>
           </div>
 
           <Card className="overflow-hidden">
@@ -193,22 +228,22 @@ const DashboardProprietario = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {mockReservas.map((reserva) => (
+                  {proprietarioReservas.map((reserva) => (
                     <tr key={reserva.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {reserva.cliente}
+                        {reserva.clientName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {reserva.chacara}
+                        {reserva.propertyName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {reserva.data}
+                        {new Date(reserva.checkIn).toLocaleDateString('pt-BR')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {reserva.pessoas}
+                        {reserva.guests}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                        {reserva.valor}
+                        R$ {reserva.totalAmount.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Badge className={getStatusColor(reserva.status)}>
@@ -216,7 +251,14 @@ const DashboardProprietario = () => {
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <Button size="sm" variant="outline">Ver</Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleViewReservation(reserva)}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Ver
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -254,8 +296,33 @@ const DashboardProprietario = () => {
                   </div>
                 </div>
                 <div className="mt-4 flex gap-2">
-                  <Button size="sm" className="flex-1">Editar</Button>
-                  <Button size="sm" variant="outline" className="flex-1">Relatório</Button>
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => {
+                      navigate('/proprietario/propriedades');
+                      toast({
+                        title: "Editando Propriedade",
+                        description: `Abrindo edição de ${chacara.nome}`,
+                      });
+                    }}
+                  >
+                    Editar
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => {
+                      navigate('/relatorios');
+                      toast({
+                        title: "Relatório da Propriedade",
+                        description: `Gerando relatório de ${chacara.nome}`,
+                      });
+                    }}
+                  >
+                    Relatório
+                  </Button>
                 </div>
               </Card>
             ))}

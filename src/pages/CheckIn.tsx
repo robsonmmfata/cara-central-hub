@@ -18,18 +18,29 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useReservations } from "@/context/ReservationContext";
+import { useAuth } from "@/context/AuthContext";
 
 const CheckIn = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { getCurrentReservation } = useReservations();
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+
+  const currentReservation = getCurrentReservation();
+  const propertyName = currentReservation?.propertyName || 'Chácara do Zé';
+  const clientName = currentReservation?.clientName || user?.name || 'Visitante';
+  const checkInDate = currentReservation?.checkIn ? new Date(currentReservation.checkIn).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
+  const guests = currentReservation?.guests || 1;
+  const totalDays = currentReservation ? Math.ceil((new Date(currentReservation.checkOut).getTime() - new Date(currentReservation.checkIn).getTime()) / (1000 * 60 * 60 * 24)) : 1;
 
   const handleCheckIn = () => {
     setIsCheckedIn(true);
     toast({
       title: "Check-in realizado!",
-      description: "Bem-vindo à Chácara do Zé! Tenha uma ótima estadia.",
+      description: `Bem-vindo à ${propertyName}! Tenha uma ótima estadia.`,
     });
   };
 
@@ -55,8 +66,8 @@ const CheckIn = () => {
             <TreePine className="h-16 w-16 text-white" />
           </div>
           <p className="text-farm-blue-200 text-sm uppercase tracking-wide mb-2">CHECK-IN DIGITAL</p>
-          <h1 className="text-4xl font-bold mb-4">Bem-vindo à Chácara do Zé!</h1>
-          <p className="text-farm-blue-100 text-lg mb-4">02 de abril de 2024 • Maria Oliveira</p>
+          <h1 className="text-4xl font-bold mb-4">Bem-vindo à {propertyName}!</h1>
+          <p className="text-farm-blue-100 text-lg mb-4">{checkInDate} • {clientName}</p>
           
           {!isCheckedIn ? (
             <Button 
@@ -136,7 +147,7 @@ const CheckIn = () => {
               checked={isCheckedIn}
               onChange={(e) => setIsCheckedIn(e.target.checked)}
             />
-            <span className="text-gray-700">Cheguei na chácara</span>
+            <span className="text-gray-700">Cheguei na {propertyName}</span>
             {isCheckedIn && <CheckCircle className="h-5 w-5 text-green-500 ml-auto" />}
           </div>
         </Card>
@@ -182,13 +193,13 @@ const CheckIn = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="p-6 text-center">
             <Calendar className="h-8 w-8 text-farm-blue-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900">3</p>
+            <p className="text-2xl font-bold text-gray-900">{totalDays}</p>
             <p className="text-sm text-gray-600">Dias de estadia</p>
           </Card>
           
           <Card className="p-6 text-center">
             <Users className="h-8 w-8 text-farm-green-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-900">6</p>
+            <p className="text-2xl font-bold text-gray-900">{guests}</p>
             <p className="text-sm text-gray-600">Pessoas</p>
           </Card>
           
@@ -204,7 +215,7 @@ const CheckIn = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
               <div className="p-6">
-                <h2 className="text-2xl font-bold mb-4">Regras da Chácara</h2>
+                <h2 className="text-2xl font-bold mb-4">Regras da {propertyName}</h2>
                 <div className="space-y-4 text-sm">
                   <div>
                     <h3 className="font-semibold mb-2">Horários</h3>
@@ -244,7 +255,7 @@ const CheckIn = () => {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
               <div className="p-6">
-                <h2 className="text-2xl font-bold mb-4">Guia da Casa</h2>
+                <h2 className="text-2xl font-bold mb-4">Guia da {propertyName}</h2>
                 <div className="space-y-4 text-sm">
                   <div>
                     <h3 className="font-semibold mb-2">WiFi</h3>
